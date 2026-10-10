@@ -21,13 +21,18 @@ import type {
   HealthResponse,
   Language,
   Page,
+  ProblemCreate,
+  ProblemDetail,
   ProblemSummary,
+  ProblemUpdate,
   ReportResponse,
   SequenceAnalysisResponse,
   SubmissionAccepted,
   SubmissionDetail,
   SubmissionSummary,
   SystemStatusResponse,
+  TestCaseAdmin,
+  TestCaseCreate,
   TrustHistoryResponse,
 } from './api-types';
 
@@ -505,6 +510,80 @@ export function getTrustHistory(
 ): Promise<TrustHistoryResponse> {
   return request<TrustHistoryResponse>('/faculty/trust-history', {
     query: { workspace_label: workspaceLabel, limit },
+    signal,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Problem & test-case management (faculty/admin)
+// ---------------------------------------------------------------------------
+
+export function createProblem(
+  payload: ProblemCreate,
+  signal?: AbortSignal,
+): Promise<ProblemDetail> {
+  return request<ProblemDetail>('/problems', {
+    method: 'POST',
+    body: payload,
+    signal,
+  });
+}
+
+export function updateProblem(
+  problemId: number,
+  payload: ProblemUpdate,
+  signal?: AbortSignal,
+): Promise<ProblemDetail> {
+  return request<ProblemDetail>(`/problems/${problemId}`, {
+    method: 'PATCH',
+    body: payload,
+    signal,
+  });
+}
+
+export function deleteProblem(
+  problemId: number,
+  signal?: AbortSignal,
+): Promise<void> {
+  return request<void>(`/problems/${problemId}`, {
+    method: 'DELETE',
+    signal,
+  });
+}
+
+export function getProblem(
+  problemId: number,
+  signal?: AbortSignal,
+): Promise<ProblemDetail> {
+  return request<ProblemDetail>(`/problems/${problemId}`, { signal });
+}
+
+export function listProblemTestCases(
+  problemId: number,
+  signal?: AbortSignal,
+): Promise<TestCaseAdmin[]> {
+  return request<TestCaseAdmin[]>(`/problems/${problemId}/test-cases`, { signal });
+}
+
+export function addTestCase(
+  problemId: number,
+  payload: { input_data: string; expected_output: string; is_public: boolean; is_generated: boolean; label?: string | null },
+  signal?: AbortSignal,
+): Promise<TestCaseAdmin> {
+  return request<TestCaseAdmin>(`/problems/${problemId}/test-cases`, {
+    method: 'POST',
+    body: payload,
+    signal,
+  });
+}
+
+export function deleteTestCase(
+  problemId: number,
+  caseId: number,
+  signal?: AbortSignal,
+): Promise<void> {
+  return request<void>(`/problems/${problemId}/test-cases/${caseId}`, {
+    method: 'DELETE',
     signal,
   });
 }

@@ -154,6 +154,81 @@ export interface ProblemDetail extends ProblemSummary {
   updated_at?: string | null;
 }
 
+// Problem creation / update
+export interface TestCaseCreate {
+  input_data: string;
+  expected_output: string;
+  is_public: boolean;
+  is_generated: boolean;
+  label?: string | null;
+}
+
+export interface TestCaseAdmin extends TestCaseCreate {
+  id: number;
+  problem_id: number;
+  created_at: string;
+}
+
+export interface ProblemCreate {
+  title: string;
+  slug?: string | null;
+  description: string;
+  input_format: string;
+  output_format: string;
+  constraints: string;
+  difficulty: Difficulty;
+  supported_languages: Language[];
+  time_limit_ms?: number | null;
+  memory_limit_mb?: number | null;
+  process_limit?: number | null;
+  visibility: 'PUBLIC' | 'PRIVATE';
+  test_cases: TestCaseCreate[];
+}
+
+export interface ProblemUpdate {
+  title?: string | null;
+  description?: string | null;
+  input_format?: string | null;
+  output_format?: string | null;
+  constraints?: string | null;
+  difficulty?: Difficulty | null;
+  supported_languages?: Language[] | null;
+  time_limit_ms?: number | null;
+  memory_limit_mb?: number | null;
+  process_limit?: number | null;
+  visibility?: 'PUBLIC' | 'PRIVATE' | null;
+}
+
+export interface TestCaseCounts {
+  public: number;
+  hidden: number;
+  generated: number;
+}
+
+export interface TestCasePublic {
+  id: number;
+  input_data: string;
+  expected_output: string;
+  label?: string | null;
+}
+
+export interface TestCasePublic {
+  id: number;
+  input_data: string;
+  expected_output: string;
+  label?: string | null;
+}
+
+export interface ProblemDetail extends ProblemSummary {
+  description: string;
+  input_format: string;
+  output_format: string;
+  constraints: string;
+  supported_languages: string[];
+  sample_tests?: TestCasePublic[];
+  updated_at?: string | null;
+}
+
 // ---------------------------------------------------------------------------
 // Submissions / execution
 // ---------------------------------------------------------------------------

@@ -4,20 +4,21 @@ import { Link, Route, Switch, useLocation, useParams, useSearch } from 'wouter';
 import {
   Activity, AlertTriangle, ArrowDownRight, ArrowRight, Braces,
   Check, ChevronDown, CircleHelp, Clock3, Code2, Cpu, FileCode2, FileSearch,
-  Gauge, GitBranch, HardDrive, LayoutDashboard, LockKeyhole, Menu, Pause,
+  Gauge, GitBranch, HardDrive, LayoutDashboard, List, LockKeyhole, Menu, Pause,
   Play, Plus, RefreshCw, RotateCcw, Search, Shield, ShieldAlert, ShieldCheck,
-  Terminal, Users, Wifi, WifiOff, X,
+  Terminal, Trash2, Users, Wifi, WifiOff, X, Edit, Eye,
 } from 'lucide-react';
 import {
-  API_BASE, compareFingerprints, createSubmission, describeApiError, getDashboard,
-  getFingerprint, getSubmission, getSubmissionReport, getTrustHistory, isAbortError, isTerminalStatus,
-  listAlerts, listAllSubmissions, listProblems, listSubmissionEvents, pollSubmission,
+  API_BASE, addTestCase, compareFingerprints, createProblem, createSubmission, deleteProblem, deleteTestCase, describeApiError, getDashboard,
+  getFingerprint, getProblem, getSubmission, getSubmissionReport, getTrustHistory, isAbortError, isTerminalStatus,
+  listAlerts, listAllSubmissions, listProblemTestCases, listProblems, listSubmissionEvents, pollSubmission,
   probeBackend, runCustom, type BackendStatus,
 } from '@/lib/codeguard-api';
 import type {
-  AlertSummary, DashboardResponse, EventResponse, FingerprintComparison, FingerprintResponse,
-  Page as ApiPage, ProblemSummary,
+  AlertSummary, DashboardResponse, Difficulty, EventResponse, FingerprintComparison, FingerprintResponse,
+  Page as ApiPage, ProblemCreate, ProblemDetail, ProblemSummary, ProblemUpdate,
   ReportResponse, SubmissionAccepted, SubmissionDetail, SubmissionSummary,
+  TestCaseAdmin, TestCaseCreate, TestCaseCounts,
   TrustHistoryResponse,
 } from '@/lib/api-types';
 import NotFound from '@/pages/not-found';
@@ -567,6 +568,7 @@ function App() {
           <Route path="/health">{() => <SystemHealthPage api={api} onRetry={refreshApi} />}</Route>
           <Route path="/reports">{() => <ReportsPage store={store} api={api} />}</Route>
           <Route path="/submissions/:id">{() => <SubmissionRoute store={store} api={api} />}</Route>
+          <Route path="/problems">{() => <ProblemsPage api={api} />}</Route>
           <Route component={NotFound} />
         </Switch>
       </main>
@@ -585,6 +587,7 @@ function Navigation({ current, onNavigate }: { current: string; onNavigate: () =
         { href: '/alerts', label: 'Security Alerts', icon: ShieldAlert },
         { href: '/analytics', label: 'Behavior Analytics', icon: Activity },
         { href: '/trust', label: 'Trust & Risk History', icon: Gauge },
+        { href: '/problems', label: 'Manage Problems', icon: FileCode2 },
       ],
     },
     {
@@ -616,6 +619,7 @@ function pageName(path: string) {
     '/submissions': 'SUBMISSIONS', '/compare': 'SUBMISSION COMPARISON',
     '/alerts': 'SECURITY ALERTS', '/analytics': 'BEHAVIOR ANALYTICS', '/trust': 'TRUST & RISK HISTORY',
     '/simulation': 'BEHAVIOR SIMULATOR', '/health': 'SYSTEM HEALTH', '/reports': 'REPORTS',
+    '/problems': 'MANAGE PROBLEMS',
   } as Record<string, string>)[path] ?? 'CODEGUARD';
 }
 
@@ -1422,6 +1426,549 @@ function SecurityAlertsPage({ api }: { api: BackendStatus }) {
   }, [reviewStatus]);
   useEffect(() => { if (api.state !== 'connected') return; const c = new AbortController(); load(c.signal); return () => c.abort(); }, [api.state, load]);
   return <div style={styles.content}><PageHeading eyebrow="FACULTY CONSOLE / ALERTS" title="Security Alerts" detail="Review backend-generated alerts without treating them as final accusations." trailing={<span className="backendBadge">LIVE BACKEND DATA</span>} /><div className="report-toolbar" style={styles.reportToolbar}><select className="filter-select" style={styles.filterSelect} value={reviewStatus} onChange={(e) => setReviewStatus(e.target.value)}><option value="">All review states</option><option value="PENDING">Pending</option><option value="UNDER_REVIEW">Under review</option><option value="CONFIRMED">Confirmed</option><option value="DISMISSED">Dismissed</option></select><button className="action-button secondary" onClick={() => load()}><RefreshCw size={12} /> Retry</button></div>{feed.status === 'loading' && <div style={styles.loadingState}><div className="skeleton-line" /><div className="skeleton-block" /></div>}{feed.status === 'error' && <div className="backend-feed-error">{feed.error}</div>}{feed.status === 'ready' && <div style={styles.reportTable}>{(feed.data?.items ?? []).map((alert) => <Link key={alert.id} href={`/submissions/${alert.submission_id}`} className="report-row"><span><strong>#{alert.id} · {alert.alert_type}</strong><small>submission {alert.submission_id}</small><br/><span style={{ fontSize: 9, color: '#7e8981', maxWidth: 320, display: 'block', marginTop: 2 }}>{alert.explanation}</span></span><span className="report-signal"><span className="report-dot" />{alert.severity}</span><span><span className="report-class">{alert.review_status}</span></span><span className="report-time">{formatTime(alert.created_at)}</span><ArrowRight size={14} /></Link>)}{!(feed.data?.items ?? []).length && <div className="report-empty" style={styles.reportEmpty}><div className="empty-icon"><ShieldCheck size={16} /></div><strong>No alerts returned</strong><p>The backend returned an empty alert page for the selected review state. This is a real zero — no alerts were fabricated to populate the list. No review endpoint exists yet, so this page is read-only.</p><div style={styles.quickActions}><Link href="/submissions" className="action-button secondary">View submissions <ArrowRight size={12} /></Link><Link href="/analytics" className="action-button secondary">Behavior analytics <ArrowRight size={12} /></Link></div></div>}</div>}</div>;
+}
+
+
+function ProblemForm({
+  initialData,
+  onSubmit,
+  onCancel,
+  isLoading,
+}: {
+  initialData: ProblemDetail | null;
+  onSubmit: (data: ProblemCreate) => Promise<ProblemDetail>;
+  onCancel: () => void;
+  isLoading: boolean;
+}) {
+  const [title, setTitle] = useState(initialData?.title ?? '');
+  const [slug, setSlug] = useState(initialData?.slug ?? '');
+  const [description, setDescription] = useState(initialData?.description ?? '');
+  const [inputFormat, setInputFormat] = useState(initialData?.input_format ?? '');
+  const [outputFormat, setOutputFormat] = useState(initialData?.output_format ?? '');
+  const [constraints, setConstraints] = useState(initialData?.constraints ?? '');
+  const [difficulty, setDifficulty] = useState<Difficulty>(initialData?.difficulty ?? 'EASY');
+  const [supportedLanguages, setSupportedLanguages] = useState<Language[]>((initialData?.supported_languages as Language[]) ?? ['c', 'cpp']);
+  const [timeLimitMs, setTimeLimitMs] = useState<number | null>(initialData?.time_limit_ms ?? null);
+  const [memoryLimitMb, setMemoryLimitMb] = useState<number | null>(initialData?.memory_limit_mb ?? null);
+  const [processLimit, setProcessLimit] = useState<number | null>(initialData?.process_limit ?? null);
+  const [visibility, setVisibility] = useState<'PUBLIC' | 'PRIVATE'>((initialData?.visibility as 'PUBLIC' | 'PRIVATE') ?? 'PUBLIC');
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    try {
+      await onSubmit({
+        title,
+        slug: slug || undefined,
+        description,
+        input_format: inputFormat,
+        output_format: outputFormat,
+        constraints,
+        difficulty,
+        supported_languages: supportedLanguages,
+        time_limit_ms: timeLimitMs,
+        memory_limit_mb: memoryLimitMb,
+        process_limit: processLimit,
+        visibility,
+        test_cases: [],
+      });
+    } catch (err) {
+      setError(describeApiError(err));
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} style={styles.form}>
+      <div className="form-group">
+        <label>Title *</label>
+        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Problem title" required />
+      </div>
+      <div className="form-group">
+        <label>Slug</label>
+        <input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="URL-friendly identifier (auto-generated if empty)" />
+      </div>
+      <div className="form-group">
+        <label>Description</label>
+        <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Problem statement" rows={4} />
+      </div>
+      <div className="form-row">
+        <div className="form-group">
+          <label>Input Format</label>
+          <textarea value={inputFormat} onChange={(e) => setInputFormat(e.target.value)} placeholder="Input format description" rows={3} />
+        </div>
+        <div className="form-group">
+          <label>Output Format</label>
+          <textarea value={outputFormat} onChange={(e) => setOutputFormat(e.target.value)} placeholder="Output format description" rows={3} />
+        </div>
+      </div>
+      <div className="form-group">
+        <label>Constraints</label>
+        <textarea value={constraints} onChange={(e) => setConstraints(e.target.value)} placeholder="Constraints" rows={2} />
+      </div>
+      <div className="form-row">
+        <div className="form-group">
+          <label>Difficulty *</label>
+          <select value={difficulty} onChange={(e) => setDifficulty(e.target.value as Difficulty)}>
+            <option value="EASY">Easy</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="HARD">Hard</option>
+          </select>
+        </div>
+        <div className="form-group">
+          <label>Visibility *</label>
+          <select value={visibility} onChange={(e) => setVisibility(e.target.value as 'PUBLIC' | 'PRIVATE')}>
+            <option value="PUBLIC">Public</option>
+            <option value="PRIVATE">Private</option>
+          </select>
+        </div>
+      </div>
+      <div className="form-row">
+        <div className="form-group">
+          <label>Supported Languages</label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <input type="checkbox" checked={supportedLanguages.includes('c')} onChange={(e) => setSupportedLanguages(e.target.checked ? [...supportedLanguages, 'c'] : supportedLanguages.filter(l => l !== 'c'))} /> C
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <input type="checkbox" checked={supportedLanguages.includes('cpp')} onChange={(e) => setSupportedLanguages(e.target.checked ? [...supportedLanguages, 'cpp'] : supportedLanguages.filter(l => l !== 'cpp'))} /> C++
+            </label>
+          </div>
+        </div>
+        <div className="form-group">
+          <label>Time Limit (ms)</label>
+          <input type="number" value={timeLimitMs ?? ''} onChange={(e) => setTimeLimitMs(e.target.value ? Number(e.target.value) : null)} placeholder="e.g. 1000" min={50} />
+        </div>
+      </div>
+      <div className="form-row">
+        <div className="form-group">
+          <label>Memory Limit (MB)</label>
+          <input type="number" value={memoryLimitMb ?? ''} onChange={(e) => setMemoryLimitMb(e.target.value ? Number(e.target.value) : null)} placeholder="e.g. 128" min={8} />
+        </div>
+        <div className="form-group">
+          <label>Process Limit</label>
+          <input type="number" value={processLimit ?? ''} onChange={(e) => setProcessLimit(e.target.value ? Number(e.target.value) : null)} placeholder="e.g. 10" min={1} />
+        </div>
+      </div>
+      {error && <div className="backend-feed-error">{error}</div>}
+      <div className="form-actions">
+        <button type="button" className="action-button secondary" onClick={onCancel} disabled={isLoading}>Cancel</button>
+        <button type="submit" className="action-button primary" disabled={isLoading || !title}>
+          {isLoading ? 'Saving...' : 'Save Problem'}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function ProblemPreview({ problem }: { problem: ProblemDetail }) {
+  return (
+    <div style={styles.preview}>
+      <div className="preview-header">
+        <h4>{problem.title}</h4>
+        <div className="preview-meta">
+          <span className={`difficulty-badge ${problem.difficulty.toLowerCase()}`}>{problem.difficulty}</span>
+          <span className="mono">#{problem.id}</span>
+          <span className="mono">{problem.slug}</span>
+        </div>
+      </div>
+      <div className="preview-section">
+        <h5>Description</h5>
+        <p>{problem.description || 'No description provided.'}</p>
+      </div>
+      {problem.input_format && (
+        <div className="preview-section">
+          <h5>Input Format</h5>
+          <p>{problem.input_format}</p>
+        </div>
+      )}
+      {problem.output_format && (
+        <div className="preview-section">
+          <h5>Output Format</h5>
+          <p>{problem.output_format}</p>
+        </div>
+      )}
+      {problem.constraints && (
+        <div className="preview-section">
+          <h5>Constraints</h5>
+          <p>{problem.constraints}</p>
+        </div>
+      )}
+      <div className="preview-section">
+        <h5>Sample Tests</h5>
+        {problem.sample_tests?.length ? (
+          <div style={styles.sampleTests}>
+            {problem.sample_tests.map((test) => (
+              <div key={test.id} className="sample-test">
+                <div className="sample-test-input">
+                  <strong>Input:</strong>
+                  <pre>{test.input_data}</pre>
+                </div>
+                <div className="sample-test-output">
+                  <strong>Output:</strong>
+                  <pre>{test.expected_output}</pre>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p>No public sample tests available.</p>
+        )}
+      </div>
+      <div className="preview-section">
+        <h5>Test Case Summary</h5>
+        <div style={{ display: 'flex', gap: 16 }}>
+          <span>{problem.test_case_counts.public} public</span>
+          <span>{problem.test_case_counts.hidden} hidden</span>
+          <span>{problem.test_case_counts.generated} generated</span>
+        </div>
+      </div>
+      <div className="preview-section">
+        <h5>Limits</h5>
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          <span>Time: {problem.time_limit_ms ? `${problem.time_limit_ms} ms` : 'Default'}</span>
+          <span>Memory: {problem.memory_limit_mb ? `${problem.memory_limit_mb} MB` : 'Default'}</span>
+          <span>Processes: {problem.process_limit ? problem.process_limit : 'Default'}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TestCaseManager({
+  problemId,
+  testCases,
+  onCreate,
+  onDelete,
+  onClose,
+}: {
+  problemId: number;
+  testCases: FeedState<TestCaseAdmin[]>;
+  onCreate: (problemId: number, testCase: Omit<TestCaseCreate, 'problem_id'>) => Promise<void>;
+  onDelete: (problemId: number, caseId: number) => Promise<void>;
+  onClose: () => void;
+}) {
+  const [showCreate, setShowCreate] = useState(false);
+  const [newInput, setNewInput] = useState('');
+  const [newExpected, setNewExpected] = useState('');
+  const [newIsPublic, setNewIsPublic] = useState(false);
+  const [newLabel, setNewLabel] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setCreating(true);
+    try {
+      await onCreate(problemId, {
+        input_data: newInput,
+        expected_output: newExpected,
+        is_public: newIsPublic,
+        is_generated: false,
+        label: newLabel || undefined,
+      });
+      setShowCreate(false);
+      setNewInput('');
+      setNewExpected('');
+      setNewIsPublic(false);
+      setNewLabel('');
+    } catch (err) {
+      setError(describeApiError(err));
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  return (
+    <div style={styles.testCaseManager}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <h4>Test Cases for Problem #{problemId}</h4>
+        <button className="action-button primary" onClick={() => setShowCreate(true)}><Plus size={12} /> Add Test Case</button>
+      </div>
+
+      {testCases.status === 'loading' && <div style={styles.loadingState}><div className="skeleton-line" /><div className="skeleton-block" /><span>Loading test cases...</span></div>}
+      {testCases.status === 'error' && <div className="backend-feed-error">{testCases.error}</div>}
+
+      {testCases.status === 'ready' && (
+        <>
+          {testCases.data?.length === 0 && <div className="report-empty" style={styles.reportEmpty}><div className="empty-icon"><FileSearch size={16} /></div><strong>No test cases</strong><p>Add test cases to make this problem submittable.</p></div>}
+          {testCases.data?.map((tc) => (
+            <div key={tc.id} className="report-row" style={{ borderBottom: '1px solid #252e28', padding: '10px 0' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="mono" style={{ fontSize: 9 }}>#{tc.id} · {tc.is_public ? 'Public' : 'Hidden'}{tc.is_generated ? ' · Generated' : ''}{tc.label ? ` · ${tc.label}` : ''}</div>
+                <div style={{ display: 'flex', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, minWidth: 200 }}>
+                    <strong>Input:</strong>
+                    <pre className="mono" style={{ fontSize: 9, maxHeight: 60, overflow: 'auto' }}>{tc.input_data}</pre>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 200 }}>
+                    <strong>Expected:</strong>
+                    <pre className="mono" style={{ fontSize: 9, maxHeight: 60, overflow: 'auto' }}>{tc.expected_output}</pre>
+                  </div>
+                  <button className="action-button secondary" style={{ padding: '4px 8px', color: '#d79385', alignSelf: 'flex-start' }} onClick={() => { if (confirm('Delete this test case?')) onDelete(problemId, tc.id); }}>
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </>
+      )}
+
+      {showCreate && (
+        <form onSubmit={handleCreate} style={{ marginTop: 16, padding: 16, border: '1px solid #2a332d', borderRadius: 4, background: '#111613' }}>
+          <h5>Add Test Case</h5>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Input</label>
+              <textarea value={newInput} onChange={(e) => setNewInput(e.target.value)} placeholder="Test input" rows={4} required />
+            </div>
+            <div className="form-group">
+              <label>Expected Output</label>
+              <textarea value={newExpected} onChange={(e) => setNewExpected(e.target.value)} placeholder="Expected output" rows={4} required />
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Public Test Case</label>
+              <select value={newIsPublic ? 'true' : 'false'} onChange={(e) => setNewIsPublic(e.target.value === 'true')}>
+                <option value="false">Hidden (judging only)</option>
+                <option value="true">Public (shown to students)</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Label</label>
+              <input value={newLabel} onChange={(e) => setNewLabel(e.target.value)} placeholder="e.g. boundary-1" />
+            </div>
+          </div>
+          {error && <div className="backend-feed-error">{error}</div>}
+          <div className="form-actions">
+            <button type="button" className="action-button secondary" onClick={() => { setShowCreate(false); setNewInput(''); setNewExpected(''); setNewIsPublic(false); setNewLabel(''); }}>Cancel</button>
+            <button type="submit" className="action-button primary" disabled={creating || !newInput || !newExpected}>
+              {creating ? 'Adding...' : 'Add Test Case'}
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  );
+}
+
+function ProblemsPage({ api }: { api: BackendStatus }) {
+  const [problems, setProblems] = useState<FeedState<ApiPage<ProblemSummary>>>({ status: 'idle' });
+  const [search, setSearch] = useState('');
+  const [showCreate, setShowCreate] = useState(false);
+  const [editingProblem, setEditingProblem] = useState<ProblemDetail | null>(null);
+  const [viewingProblem, setViewingProblem] = useState<ProblemDetail | null>(null);
+  const [showTestCases, setShowTestCases] = useState<number | null>(null);
+  const [testCases, setTestCases] = useState<FeedState<TestCaseAdmin[]>>({ status: 'idle' });
+  const [loading, setLoading] = useState(false);
+
+  const loadProblems = useCallback((signal?: AbortSignal) => {
+    setProblems({ status: 'loading' });
+    listProblems({ page: 1, page_size: 50 }, signal)
+      .then((data) => setProblems({ status: 'ready', data }))
+      .catch((error: unknown) => { if (!isAbortError(error)) setProblems({ status: 'error', error: describeApiError(error) }); });
+  }, []);
+
+  useEffect(() => {
+    if (api.state !== 'connected') { setProblems({ status: 'idle' }); return; }
+    const controller = new AbortController();
+    loadProblems(controller.signal);
+    return () => controller.abort();
+  }, [api.state, loadProblems]);
+
+  const loadTestCases = useCallback((problemId: number) => {
+    setShowTestCases(problemId);
+    setTestCases({ status: 'loading' });
+    listProblemTestCases(problemId)
+      .then((data) => setTestCases({ status: 'ready', data }))
+      .catch((error: unknown) => { if (!isAbortError(error)) setTestCases({ status: 'error', error: describeApiError(error) }); });
+  }, []);
+
+  const handleCreate = async (formData: ProblemCreate) => {
+    setLoading(true);
+    try {
+      const created = await createProblem(formData);
+      setShowCreate(false);
+      loadProblems();
+      return created;
+    } catch (error) {
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTestCaseCreate = async (problemId: number, testCase: Omit<TestCaseCreate, 'problem_id'>) => {
+    try {
+      await addTestCase(problemId, testCase);
+      loadTestCases(problemId);
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const handleDeleteTestCase = async (problemId: number, caseId: number) => {
+    try {
+      await deleteTestCase(problemId, caseId);
+      loadTestCases(problemId);
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const handleViewProblem = async (problemId: number) => {
+    setViewingProblem(null);
+    try {
+      const detail = await getProblem(problemId);
+      setViewingProblem(detail);
+    } catch (error) {
+      setViewingProblem(null);
+      throw error;
+    }
+  };
+
+  const handleEditProblem = async (problemId: number) => {
+    setEditingProblem(null);
+    try {
+      const detail = await getProblem(problemId);
+      setEditingProblem(detail);
+    } catch (error) {
+      setEditingProblem(null);
+      throw error;
+    }
+  };
+
+  const filteredProblems = problems.data?.items?.filter((p) =>
+    p.title.toLowerCase().includes(search.toLowerCase()) ||
+    p.slug.toLowerCase().includes(search.toLowerCase()) ||
+    String(p.id).includes(search)
+  ) ?? [];
+
+  return (
+    <div style={styles.content}>
+      <PageHeading eyebrow="FACULTY CONSOLE / PROBLEMS" title="Manage Problems" detail="Create and manage programming problems and their test cases. Local-dev mode is not authentication." trailing={<span className="backendBadge">LIVE BACKEND DATA</span>} />
+      <ApiNotice api={api} compact />
+      <div className="report-toolbar" style={styles.reportToolbar}>
+        <div className="search-box" style={styles.searchBox}>
+          <Search size={14} />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by title, slug, or ID"
+          />
+        </div>
+        <button className="action-button secondary" onClick={() => loadProblems()} disabled={problems.status === 'loading'}>
+          <RefreshCw size={12} /> Refresh
+        </button>
+        <button className="action-button primary" onClick={() => { setEditingProblem(null); setShowCreate(true); }}>
+          <Plus size={12} /> Create Problem
+        </button>
+      </div>
+
+      {problems.status === 'loading' && <div style={styles.loadingState}><div className="skeleton-line" /><div className="skeleton-block" /><span>Loading problems...</span></div>}
+      {problems.status === 'error' && <div className="backend-feed-error">{problems.error}</div>}
+
+      {problems.status === 'ready' && (
+        <>
+          <div className="backend-feed-caption">{filteredProblems.length} OF {problems.data?.pagination?.total ?? 0} PROBLEMS</div>
+          <div style={styles.reportTable}>
+            <div className="report-table-head">
+              <span>ID</span>
+              <span>TITLE</span>
+              <span>SLUG</span>
+              <span>DIFFICULTY</span>
+              <span>TESTS</span>
+              <span>ACTIONS</span>
+            </div>
+            {filteredProblems.length === 0 ? (
+              <div className="report-empty" style={styles.reportEmpty}>
+                <div className="empty-icon"><FileSearch size={16} /></div>
+                <strong>No problems match</strong>
+                <p>Adjust your search or create a new problem.</p>
+              </div>
+            ) : (
+              filteredProblems.map((problem) => (
+                <div key={problem.id} className="report-row">
+                  <span className="mono">#{problem.id}</span>
+                  <span><strong>{problem.title}</strong></span>
+                  <span className="mono">{problem.slug}</span>
+                  <span><span className={`report-class ${problem.difficulty.toLowerCase()}`}>{problem.difficulty}</span></span>
+                  <span className="mono">{problem.test_case_counts.public} public / {problem.test_case_counts.hidden} hidden</span>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    <button className="action-button secondary" style={{ padding: '4px 8px' }} onClick={() => { handleViewProblem(problem.id); setViewingProblem(null); }}>
+                      <Eye size={12} /> View
+                    </button>
+                    <button className="action-button secondary" style={{ padding: '4px 8px' }} onClick={() => handleEditProblem(problem.id)}>
+                      <Edit size={12} /> Edit
+                    </button>
+                    <button className="action-button secondary" style={{ padding: '4px 8px' }} onClick={() => loadTestCases(problem.id)}>
+                      <List size={12} /> Tests
+                    </button>
+                    <button className="action-button secondary" style={{ padding: '4px 8px', color: '#d79385' }} onClick={() => { if (confirm(`Delete problem "${problem.title}"?`)) deleteProblem(problem.id).then(() => loadProblems()).catch(e => alert(describeApiError(e))); }}>
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Create/Edit Problem Modal */}
+      {(showCreate || editingProblem) && (
+        <div className="modal-overlay" onClick={() => { setShowCreate(false); setEditingProblem(null); }}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={styles.modalContent}>
+            <div className="modal-header">
+              <h3>{editingProblem ? 'Edit Problem' : 'Create Problem'}</h3>
+              <button className="modal-close" onClick={() => { setShowCreate(false); setEditingProblem(null); }}><X size={16} /></button>
+            </div>
+            <ProblemForm
+              initialData={editingProblem}
+              onSubmit={handleCreate}
+              onCancel={() => { setShowCreate(false); setEditingProblem(null); }}
+              isLoading={loading}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Problem Preview Modal */}
+      {viewingProblem && (
+        <div className="modal-overlay" onClick={() => setViewingProblem(null)}>
+          <div className="modal-content large" onClick={(e) => e.stopPropagation()} style={styles.modalContent}>
+            <div className="modal-header">
+              <h3>Problem Preview</h3>
+              <button className="modal-close" onClick={() => setViewingProblem(null)}><X size={16} /></button>
+            </div>
+            <ProblemPreview problem={viewingProblem} />
+          </div>
+        </div>
+      )}
+
+      {/* Test Cases Modal */}
+      {showTestCases !== null && (
+        <div className="modal-overlay" onClick={() => setShowTestCases(null)}>
+          <div className="modal-content large" onClick={(e) => e.stopPropagation()} style={styles.modalContent}>
+            <div className="modal-header">
+              <h3>Test Cases</h3>
+              <button className="modal-close" onClick={() => setShowTestCases(null)}><X size={16} /></button>
+            </div>
+            <TestCaseManager
+              problemId={showTestCases}
+              testCases={testCases}
+              onCreate={handleTestCaseCreate}
+              onDelete={handleDeleteTestCase}
+              onClose={() => setShowTestCases(null)}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function BehaviorAnalyticsPage({ api }: { api: BackendStatus }) {

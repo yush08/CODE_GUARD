@@ -1,0 +1,1361 @@
+# CODEGUARD — COMPLETE FRONTEND DEVELOPMENT PROMPT
+
+## Project Title
+
+**CodeGuard — A Behavior-Aware Secure Online Judge Using Windows OS-Level Isolation**
+
+Build a complete, polished, functional frontend for CodeGuard, an Operating Systems academic project.
+
+CodeGuard is an online compiler and behavior-monitoring platform designed to demonstrate how student programs can be executed in a controlled Windows environment while monitoring resource usage, process activity, filesystem events, and suspicious runtime behavior.
+
+The application must combine three experiences:
+
+1. A professional online compiler and coding workspace.
+2. An interactive execution and security simulation.
+3. A comprehensive administration and security-monitoring dashboard.
+
+I will develop the backend separately using Python, FastAPI, and PostgreSQL.
+
+**Your task is frontend development only. Do not build the backend, database, compiler, or Windows execution engine.**
+
+---
+
+# 1. Core Requirements
+
+The application must include:
+
+- A premium dark developer-platform design.
+- A compiler workspace using Monaco Editor.
+- Multiple student tabs.
+- Multiple program tabs inside each student workspace.
+- Independent code and workspace state for each tab.
+- C and C++ language selection when supported by the backend.
+- Run and Submit functionality connected to FastAPI.
+- A safe simulation mode for demonstrating OS concepts.
+- A detailed admin dashboard below the compiler workspace.
+- Runtime behavior monitoring.
+- Process and resource visualizations.
+- Behavior fingerprinting.
+- Sequence-aware analysis.
+- Possible hardcoding detection.
+- Adaptive trust and risk history.
+- Detailed submission reports.
+- Real API integration.
+- Persistent local workspace state.
+- No sign-in, login, or registration pages.
+
+Prioritize working functionality over decorative mockups.
+
+Do not remove existing working code if this prompt is being used to update an existing Replit project. Inspect the current project first, preserve useful components, and modify incrementally.
+
+---
+
+# 2. Technology Stack
+
+Use:
+
+- React
+- TypeScript
+- Vite
+- Tailwind CSS
+- Framer Motion
+- Monaco Editor
+- Lucide React icons
+- React Router
+- TanStack Query
+- Axios or an equivalent centralized HTTP client
+- Recharts for data visualizations
+
+Use reusable components, typed API responses, clean state management, and a modular project structure.
+
+Do not implement backend logic in the frontend.
+
+## API configuration
+
+Create an environment variable:
+
+`VITE_API_BASE_URL=http://localhost:8000/api/v1`
+
+Provide a `.env.example`.
+
+Do not hardcode API URLs across components.
+
+Inspect the actual backend OpenAPI specification before assuming request or response schemas. The API may be unavailable during initial UI development, so make the frontend resilient to connection failures.
+
+---
+
+# 3. Design Direction
+
+## Primary visual reference
+
+Use the provided Luminal landing-page screenshot as inspiration.
+
+Create an original CodeGuard identity with:
+
+- Almost-black backgrounds.
+- Subtle technical grid lines.
+- Large, elegant typography.
+- Green luminous effects.
+- Mint-colored highlights.
+- Restrained borders.
+- Minimal cards.
+- Premium spacing.
+- Subtle animations.
+- A polished developer-tool aesthetic.
+
+The application should feel like a combination of a premium developer platform, an online compiler, and a security operations console.
+
+Do not copy Luminal's branding or website exactly.
+
+## Color palette
+
+Use these design tokens consistently.
+
+| Purpose | Color |
+|---|---|
+| Main background | `#080A09` |
+| Secondary background | `#101311` |
+| Panel background | `#141815` |
+| Elevated surface | `#1A201B` |
+| Primary text | `#F4F7F4` |
+| Secondary text | `#9BA59D` |
+| Border | `#29332C` |
+| Primary accent | `#48F58A` |
+| Mint accent | `#A0FFD0` |
+| Warning | `#F4C95D` |
+| Error | `#FF6868` |
+
+Use green selectively for active tabs, primary actions, successful execution, and normal security status.
+
+Do not make every element glow.
+
+## Typography
+
+- Headings: Space Grotesk.
+- General interface: Inter.
+- Code and technical labels: JetBrains Mono.
+
+Use large typography on the landing page and compact, readable typography in the compiler and admin dashboard.
+
+## Design rules
+
+Avoid:
+
+- Generic SaaS dashboard templates.
+- Excessive gradients.
+- Excessive glassmorphism.
+- Oversized rounded cards everywhere.
+- Random decorative icons.
+- Fake customer statistics.
+- Fake security incidents.
+- Excessive animation.
+- Unnecessary white backgrounds.
+
+The compiler and dashboard must remain readable during a live faculty demonstration.
+
+---
+
+# 4. Application Navigation
+
+Create a persistent navigation bar.
+
+Left side:
+- CodeGuard logo.
+- Current section breadcrumb.
+
+Navigation:
+- Compiler
+- Simulation
+- Admin Dashboard
+- Security Reports
+- Features
+
+Right side:
+- Backend connection status.
+- Workspace settings.
+- Compact theme/workspace controls.
+
+Do not include:
+- Sign In
+- Sign Up
+- Login
+- Registration
+- Password forms
+- Authentication redirects
+
+The application must open directly into the compiler workspace.
+
+Use these routes:
+
+- `/` — Compiler workspace.
+- `/simulation` — Execution simulation.
+- `/admin` — Admin dashboard.
+- `/reports` — Security reports.
+- `/submissions/:id` — Detailed submission report.
+
+Navigating between pages must not erase workspace state.
+
+---
+
+# 5. Landing / Welcome Experience
+
+Keep the landing experience compact so it does not obstruct the compiler.
+
+If a welcome hero is included, use:
+
+### Small status pill
+
+`WINDOWS-NATIVE EXECUTION`
+
+### Main heading
+
+**Code runs.  
+We watch how.**
+
+Highlight “how.” with a mint-green gradient.
+
+### Supporting text
+
+“An OS-aware online judge that evaluates program correctness while monitoring resource usage and runtime behavior in a controlled Windows execution environment.”
+
+### Primary CTA
+
+**Open Compiler**
+
+Navigate directly to `/`.
+
+### Secondary CTA
+
+**Explore Security**
+
+Navigate to `/admin`.
+
+Do not invent user counts, ratings, performance benchmarks, or claims of adoption.
+
+Add a subtle green luminous effect behind the hero heading and a restrained grid background.
+
+The landing page should be optional and must never be required to access the compiler.
+
+---
+
+# 6. Compiler Workspace — Highest Priority
+
+This is the main interface and should occupy most of the screen.
+
+Build a professional online coding workspace inspired by modern IDEs and online judges.
+
+## Overall layout
+
+```text
+┌────────────────────────────────────────────────────────────┐
+│ CODEGUARD        Compiler  Simulation  Admin Dashboard     │
+├────────────────────────────────────────────────────────────┤
+│ Student 1     Student 2     Student 3      +               │
+├────────────────────────────────────────────────────────────┤
+│ Program 1     Program 2     Program 3       +              │
+├────────────────┬───────────────────────────────────────────┤
+│                │                                           │
+│ Problem        │             Monaco Editor                 │
+│ Explorer       │                                           │
+│                │                                           │
+│                │                                           │
+├────────────────┴───────────────────────────────────────────┤
+│ Output | Input | Test Cases | Execution | Behavior | Logs   │
+├────────────────────────────────────────────────────────────┤
+│                ADMIN / SECURITY DASHBOARD                  │
+└────────────────────────────────────────────────────────────┘
+```
+
+The exact layout can adapt to screen size, but preserve the two-level tab structure.
+
+---
+
+# 7. Student Tabs
+
+Use the following tab design, based on the first reference image:
+
+`[ Student 1 ] [ Student 2 ] [ + ]`
+
+The student tab row must be separate from the program tab row beneath it.
+
+## Behavior
+
+Users can:
+
+- Create a student workspace.
+- Rename a student workspace.
+- Switch between student workspaces.
+- Close a student workspace.
+- Confirm before deleting a workspace containing unsaved changes.
+- Keep code, program tabs, and execution history independent.
+
+The active tab should have a clear accent treatment. Inactive tabs should use muted backgrounds.
+
+Each student workspace is a local demonstration workspace, not a real authenticated student account.
+
+Do not represent local tab names as verified student identities.
+
+## Workspace persistence
+
+Persist workspace data in local storage, including:
+
+- Student workspace IDs and names.
+- Program IDs and names.
+- Source code.
+- Selected language.
+- Selected problem.
+- Editor settings.
+- Unsaved-change state.
+- Local simulation history.
+
+Use stable unique IDs rather than tab indexes.
+
+Do not store secrets or access tokens in workspace state.
+
+---
+
+# 8. Program Tabs
+
+Directly below the student tab row, implement:
+
+`[ Program 1 ] [ Program 2 ] [ Program 3 ] [ + ]`
+
+Every student workspace can contain multiple programs.
+
+Each program must maintain independent:
+
+- Source code.
+- Language.
+- Selected problem.
+- Custom input.
+- Execution results.
+- Submission history.
+- Latest behavior fingerprint.
+- Security analysis.
+
+Users can:
+
+- Create programs.
+- Rename programs.
+- Switch between programs.
+- Close programs.
+- See a modified/unsaved indicator.
+- Confirm before deleting a program.
+- Preserve source code when switching tabs.
+
+Changing the active student must update the program tabs to show that student's programs.
+
+Changing the active program must update the editor, selected problem, input, and results.
+
+The plus buttons must actually work.
+
+Do not confuse programs with problems. Programs are editable workspaces; problems are coding challenges.
+
+---
+
+# 9. Monaco Code Editor
+
+Use Monaco Editor as the main editing surface.
+
+Support:
+
+- C syntax highlighting.
+- C++ syntax highlighting.
+- Line numbers.
+- Automatic indentation.
+- Code folding.
+- Editor font-size controls.
+- Keyboard shortcuts.
+- Dark theme.
+- Resizable editor panel.
+- Language selector.
+- Reset and formatting actions where supported.
+
+Initially support C and C++ if these languages are exposed by the backend.
+
+Provide an optional starter template for the selected language.
+
+Never overwrite existing source code automatically when switching languages.
+
+## Editor toolbar
+
+Left side:
+- Current program name.
+- Language selector.
+- Selected problem.
+
+Right side:
+- Format.
+- Reset.
+- Run.
+- Submit.
+
+Use a green primary button for Run and a secondary outlined button for Submit.
+
+Disable Run and Submit while an execution request is active.
+
+Display clear progress states such as:
+
+- Preparing submission.
+- Compiling.
+- Executing.
+- Running test cases.
+- Analyzing behavior.
+- Completed.
+
+These states must reflect backend responses whenever available. If the backend only returns a completed result, do not invent detailed live progress.
+
+---
+
+# 10. Problem Explorer
+
+Create a collapsible left sidebar.
+
+Include:
+
+- Problem title.
+- Description.
+- Difficulty.
+- Input format.
+- Output format.
+- Constraints.
+- Sample input.
+- Sample output.
+- Public test cases.
+- Supported languages.
+
+Fetch published problems from the FastAPI backend.
+
+Allow:
+- Searching problems.
+- Filtering by difficulty.
+- Selecting a problem.
+- Opening problem details.
+
+If the backend is offline, show a clear error and optionally offer explicitly labeled local demo problems.
+
+Never expose hidden test-case inputs or expected outputs.
+
+---
+
+# 11. Execution Console
+
+Place an expandable, resizable console beneath the editor.
+
+Create tabs:
+
+1. Output
+2. Custom Input
+3. Test Cases
+4. Compilation
+5. Execution
+6. Behavior
+7. Security Events
+
+## Output
+
+Display actual stdout and stderr from the backend.
+
+## Custom Input
+
+Allow the user to enter stdin for a supported execution request.
+
+Persist the input independently for each program.
+
+## Test Cases
+
+Display:
+- Test number.
+- Passed/failed status.
+- Execution outcome.
+- Error details.
+- Expected versus actual output only where permitted.
+
+Do not display hidden test inputs or expected outputs.
+
+## Compilation
+
+Display:
+- Compilation status.
+- Compiler output.
+- Error messages.
+- Warnings where available.
+
+## Execution
+
+Display:
+- Execution duration.
+- Peak observed memory.
+- Exit code.
+- Result status.
+- Timeout information.
+- Resource-limit events.
+
+## Behavior
+
+Display actual runtime measurements and the behavior fingerprint.
+
+## Security Events
+
+Display observed events and matched security rules.
+
+Never fabricate results.
+
+---
+
+# 12. Run and Submit Workflow
+
+Implement the actual frontend integration for the separately developed FastAPI backend.
+
+### Run
+
+1. Validate the selected language and source code.
+2. Collect the current program's source and input.
+3. Send the request to the appropriate backend endpoint.
+4. Display a loading state.
+5. Retrieve the actual execution result.
+6. Update the console.
+7. Refresh behavior and security panels when data is available.
+
+### Submit
+
+1. Require a selected problem.
+2. Send the source code and language to the submission API.
+3. Show submission progress when supported.
+4. Poll or retrieve the result using the actual backend contract.
+5. Display test-case outcomes.
+6. Load the detailed submission report.
+7. Update the admin dashboard from the resulting data.
+
+Inspect the actual OpenAPI schema before implementing payloads.
+
+Do not invent endpoint request bodies or assume that every backend endpoint exists.
+
+If a required endpoint is missing, display an appropriate unavailable state and document the integration requirement.
+
+---
+
+# 13. Simulation Mode
+
+Build a dedicated `/simulation` page and provide access from the compiler workspace.
+
+This is a central academic demonstration feature.
+
+Simulation mode must demonstrate how CodeGuard's execution pipeline responds to different program behaviors.
+
+## Scenario selector
+
+Create seven predefined scenarios:
+
+1. Normal Program.
+2. Infinite Loop.
+3. Memory-Heavy Program.
+4. Excessive Process Creation.
+5. Restricted File Access Attempt.
+6. Possible Hardcoded Solution.
+7. Suspicious Event Sequence.
+
+Display them as selectable scenario cards or a clean selector.
+
+Each scenario should include:
+
+- Scenario name.
+- Description.
+- OS concept being demonstrated.
+- Expected behavior.
+- Simulated execution timeline.
+- Resource and security event panels.
+- Final outcome.
+- Explanation of what CodeGuard is demonstrating.
+
+## Simulation controls
+
+Implement working controls:
+
+- Start.
+- Pause.
+- Resume.
+- Reset.
+- Simulation speed.
+
+Use deterministic predefined event sequences or bounded demo fixtures.
+
+Do not execute dangerous code simply to produce an animation.
+
+The simulation must work even when the backend is offline.
+
+## Execution timeline
+
+Visualize:
+
+```text
+CODE SUBMITTED
+      ↓
+COMPILATION
+      ↓
+PROCESS CREATED
+      ↓
+RESOURCE CONTROLS APPLIED
+      ↓
+PROGRAM EXECUTION
+      ↓
+BEHAVIOR MONITORING
+      ↓
+SECURITY ANALYSIS
+      ↓
+FINAL RESULT
+```
+
+Animate the stages with Framer Motion.
+
+Highlight the active stage and distinguish completed, active, and failed stages.
+
+## Scenario details
+
+### Normal Program
+
+Show a normal execution lifecycle, test evaluation, and a successful result.
+
+### Infinite Loop
+
+Show elapsed execution time increasing until the configured deadline is reached.
+
+The simulated result should be:
+
+`TIME LIMIT EXCEEDED`
+
+### Memory-Heavy Program
+
+Show memory consumption approaching the scenario's configured limit and display a limit event if defined by the scenario.
+
+### Excessive Process Creation
+
+Show child-process events and an active process count approaching the configured limit.
+
+### Restricted File Access Attempt
+
+Show an attempted access to a protected resource.
+
+Clearly label whether the event was:
+- Simulated.
+- Observed.
+- Actually blocked by the backend.
+
+### Possible Hardcoded Solution
+
+Show visible tests passing and generated tests exposing a possible issue.
+
+Label the result as a review signal, not proof of cheating.
+
+### Suspicious Event Sequence
+
+Show a chronological sequence and highlight the configured rule that matches it.
+
+## Simulation versus real execution
+
+Display a prominent mode indicator:
+
+- `LIVE BACKEND`
+- `SIMULATION`
+
+Simulation data must be visually distinguishable from actual backend data.
+
+Use labels such as `SIMULATED EVENT` and `DEMO DATA`.
+
+Never mix simulated resource values with live execution measurements without identifying their source.
+
+---
+
+# 14. Admin Dashboard — Main Monitoring Interface
+
+Build a comprehensive dashboard at `/admin`.
+
+Also include an admin dashboard section directly below the compiler workspace on the main page, so faculty can scroll from code execution to the corresponding monitoring results.
+
+Both dashboard views must use the same reusable components and data source.
+
+The dashboard should look like a security operations console.
+
+## A. Overview metrics
+
+Create cards for:
+
+- Total submissions.
+- Accepted submissions.
+- Wrong answers.
+- Compilation errors.
+- Runtime errors.
+- Time-limit violations.
+- Memory-limit violations.
+- Process-limit violations.
+- Security alerts.
+
+Populate these cards using backend data.
+
+If no data exists, show empty states or zeros only when the API confirms that the counts are zero.
+
+In simulation mode, use clearly labeled simulated metrics.
+
+Do not invent real submission counts.
+
+## B. Execution health
+
+Create charts for:
+
+- Submission outcome distribution.
+- Execution-time distribution.
+- Memory usage.
+- Resource-limit violations.
+- Submission activity over time.
+
+Use Recharts.
+
+Show:
+- Meaningful labels.
+- Tooltips.
+- Legends where appropriate.
+- Empty states.
+- Responsive layouts.
+
+Use actual API data when available.
+
+## C. Live execution monitor
+
+Create a table with:
+
+- Submission ID.
+- Student workspace label, if available.
+- Program name.
+- Language.
+- Problem.
+- Execution status.
+- Execution duration.
+- Peak observed memory.
+- Process count.
+- Security status.
+- Timestamp.
+
+Support:
+- Search.
+- Sorting.
+- Status filtering.
+- Pagination.
+- Opening the detailed report.
+
+Do not claim that local student workspace labels represent authenticated student identities.
+
+## D. Process monitor
+
+Create a panel for:
+
+- Process lifecycle events.
+- Process counts.
+- Child-process activity.
+- Process-limit events.
+- Process termination.
+- Execution outcomes.
+
+Use a process-tree visualization where the backend provides parent/child relationships.
+
+Otherwise, display a simpler event list and process-count history.
+
+Never fabricate process IDs or parent-child relationships for live submissions.
+
+## E. Resource monitor
+
+Create panels for:
+
+- CPU time.
+- CPU utilization when available.
+- Memory usage.
+- Execution duration.
+- Configured limits.
+- Peak observed usage.
+- Limit utilization.
+- Resource violations.
+
+Distinguish CPU time from CPU utilization.
+
+Show the measurement source and whether the value is:
+- Live.
+- Final measured value.
+- Simulated.
+- Unavailable.
+
+Do not represent polling-based observations as perfect peak measurements.
+
+## F. Filesystem and security monitor
+
+Display observable events involving:
+
+- Workspace file creation.
+- File reads and writes.
+- Access-denied events.
+- Restricted-path attempts.
+- Network activity when monitored.
+- Process creation.
+- Resource-limit events.
+- Security-rule matches.
+
+Every event should include:
+
+- Timestamp.
+- Submission ID.
+- Event type.
+- Severity.
+- Explanation.
+- Enforcement status.
+- Data source.
+
+Distinguish:
+- Observed.
+- Blocked.
+- Simulated.
+- Inferred.
+
+Never claim that an operation was blocked unless the backend confirms it.
+
+---
+
+# 15. Novelty Feature 1 — Behavior Fingerprinting
+
+Create a dedicated dashboard section.
+
+A behavior fingerprint summarizes how a submitted program behaves during execution.
+
+Display available fields such as:
+
+- Execution duration.
+- CPU measurements.
+- Peak observed memory.
+- Process count.
+- Child-process activity.
+- File events.
+- Network events.
+- Resource violations.
+- Exit code.
+
+Use compact metric cards and a structured fingerprint summary.
+
+Allow comparison between two submissions when the backend provides the required data.
+
+Highlight meaningful differences without claiming that different behavior automatically indicates malicious intent.
+
+If a measurement is unavailable, show `Not available`.
+
+Never invent measurement values.
+
+---
+
+# 16. Novelty Feature 2 — Sequence-Aware Analysis
+
+Create a chronological event timeline.
+
+Example:
+
+```text
+PROCESS_START
+      ↓
+CHILD_PROCESS_CREATED
+      ↓
+CHILD_PROCESS_CREATED
+      ↓
+PROCESS_LIMIT_EVENT
+      ↓
+PROCESS_TERMINATED
+```
+
+Display:
+- Event type.
+- Timestamp.
+- Matched rule.
+- Severity.
+- Explanation.
+- Supporting evidence.
+
+Highlight the events that triggered a configured rule.
+
+Use a rule-based explanation from the backend.
+
+Do not label every unusual sequence as malicious.
+
+Only display events that were actually observed or explicitly marked as simulated.
+
+---
+
+# 17. Novelty Feature 3 — Possible Hardcoding Detection
+
+Create a dedicated analysis panel.
+
+Display:
+- Visible test outcomes.
+- Hidden-test aggregate outcomes.
+- Generated-test aggregate outcomes.
+- Review recommendation.
+- Supporting evidence.
+- Analysis status.
+
+Do not expose hidden inputs or expected outputs.
+
+Use these labels:
+
+- `NO SIGNAL`
+- `REVIEW RECOMMENDED`
+- `INSUFFICIENT DATA`
+
+If the submission passes visible tests but fails generated cases, show an explanation.
+
+Clearly state that a heuristic finding is not proof of cheating.
+
+Do not display arbitrary confidence percentages.
+
+---
+
+# 18. Novelty Feature 4 — Adaptive Trust
+
+Create a panel for student or workspace history.
+
+Display:
+- Trust/risk score returned by the backend.
+- Historical score changes.
+- Reasons for changes.
+- Related security events.
+- Monitoring status.
+- Faculty review status.
+
+Use a timeline for score history.
+
+If the backend has no score, show `NOT CALCULATED`.
+
+Do not calculate a fake frontend score.
+
+The interface must communicate that fundamental security controls always remain active, regardless of trust score.
+
+Do not equate suspicious behavior with confirmed misconduct.
+
+For local simulated student tabs, use explicitly labeled demo histories unless the backend provides actual user identities.
+
+---
+
+# 19. Security Reports
+
+Create a `/reports` page listing security reports.
+
+Include:
+- Submission ID.
+- Alert type.
+- Severity.
+- Detection time.
+- Review status.
+- Source of evidence.
+
+Allow users to filter by:
+- Severity.
+- Event type.
+- Review status.
+- Submission.
+
+Opening a report should show:
+- Summary.
+- Observed events.
+- Matched rules.
+- Resource measurements.
+- Behavior fingerprint.
+- Sequence analysis.
+- Hardcoding analysis where available.
+- Trust history where authorized.
+
+If a faculty review endpoint exists, allow authorized users to mark alerts as reviewed or dismissed.
+
+Do not pretend an alert is reviewed until the backend confirms the update.
+
+---
+
+# 20. Detailed Submission Report
+
+Create a route:
+
+`/submissions/:id`
+
+Include sections:
+
+### Submission
+- Submission ID.
+- Problem.
+- Language.
+- Status.
+- Creation timestamp.
+
+### Compilation
+- Compiler result.
+- Compiler output.
+- Duration where available.
+
+### Execution
+- Execution time.
+- Peak observed memory.
+- Exit code.
+- Test results.
+- Failure explanation.
+
+### Resource Controls
+- Configured limits.
+- Measured values.
+- Enforcement results.
+
+### Behavior Fingerprint
+- Available measurements.
+- Runtime events.
+
+### Security Analysis
+- Matched rules.
+- Severity.
+- Supporting evidence.
+- Review status.
+
+### Hardcoding Analysis
+- Test outcomes.
+- Review recommendation.
+- Explanation.
+
+### Adaptive Trust
+- Relevant history.
+- Score changes.
+- Reasons.
+
+Never reveal hidden test-case contents to unauthorized clients.
+
+---
+
+# 21. Backend Integration
+
+The backend is a separate Python/FastAPI application using PostgreSQL.
+
+Configure:
+
+`VITE_API_BASE_URL=http://localhost:8000/api/v1`
+
+Create a centralized API client.
+
+Inspect the actual backend OpenAPI schema before assuming the endpoint contracts.
+
+Integrate with available endpoints for:
+
+- Health.
+- System status.
+- Problems.
+- Submissions.
+- Submission details.
+- Behavior fingerprints.
+- Runtime events.
+- Sequence analysis.
+- Hardcoding analysis.
+- Faculty dashboard.
+- Security alerts.
+- Trust history.
+
+Use TanStack Query for request handling and caching.
+
+Handle:
+- Loading states.
+- Empty results.
+- Network errors.
+- Validation errors.
+- Permission errors.
+- Failed executions.
+- Missing measurements.
+- Unavailable analysis modules.
+
+If an endpoint does not exist yet, show an appropriate unavailable state.
+
+Do not create a fake backend, fabricate successful execution responses, or silently replace real data with simulation data.
+
+## Backend connection status
+
+Display:
+
+- `CONNECTED`
+- `DISCONNECTED`
+- `CHECKING`
+
+Determine status from actual API responses.
+
+When disconnected:
+- Keep the editor usable.
+- Preserve code.
+- Allow simulation mode.
+- Show a clear error when live execution is attempted.
+- Do not pretend a submission succeeded.
+
+---
+
+# 22. No Sign-In or Registration
+
+Do not implement:
+
+- Login.
+- Registration.
+- Sign-in buttons.
+- Password forms.
+- Authentication redirects.
+- Fake user accounts.
+
+Open the compiler workspace directly.
+
+Student tabs are local demonstration workspaces.
+
+Do not use the tabs to bypass backend authorization. If the backend restricts a faculty operation, show a permission message rather than bypassing the restriction.
+
+---
+
+# 23. Workspace State Management
+
+Create a typed state model similar to:
+
+```ts
+type SubmissionStatus =
+  | "ACCEPTED"
+  | "WRONG_ANSWER"
+  | "COMPILATION_ERROR"
+  | "RUNTIME_ERROR"
+  | "TIME_LIMIT_EXCEEDED"
+  | "MEMORY_LIMIT_EXCEEDED"
+  | "PROCESS_LIMIT_EXCEEDED"
+  | "SECURITY_VIOLATION"
+  | "INTERNAL_ERROR";
+
+type ProgramWorkspace = {
+  id: string;
+  name: string;
+  sourceCode: string;
+  language: "c" | "cpp";
+  problemId: string | null;
+  customInput: string;
+  modified: boolean;
+  lastSubmissionId?: string;
+};
+
+type StudentWorkspace = {
+  id: string;
+  name: string;
+  programs: ProgramWorkspace[];
+  activeProgramId: string;
+};
+
+type DataSource = "LIVE" | "SIMULATION";
+```
+
+Adapt types to the actual API schema where necessary.
+
+Requirements:
+- Stable IDs.
+- Independent program state.
+- Independent student state.
+- Persistence across refreshes.
+- Safe handling of unsaved changes.
+- Explicit source identification for live versus simulated data.
+
+Do not use a single global source-code string for all tabs.
+
+---
+
+# 24. Reusable Components
+
+Build reusable components for:
+
+- Application navigation.
+- Student tab bar.
+- Program tab bar.
+- Monaco editor wrapper.
+- Problem explorer.
+- Execution console.
+- Resource metric cards.
+- Process monitor.
+- Event timeline.
+- Behavior fingerprint.
+- Security alert.
+- Hardcoding analysis.
+- Adaptive trust history.
+- Dashboard charts.
+- Submission table.
+- Submission report.
+- Simulation controls.
+- Loading states.
+- Empty states.
+- Connection errors.
+
+Avoid one giant component containing the entire application.
+
+---
+
+# 25. Responsive Design
+
+Prioritize desktop layouts because CodeGuard is a coding and monitoring platform.
+
+Support:
+- Large desktop screens.
+- Standard laptop screens.
+- Tablets.
+
+On smaller screens:
+- Collapse the problem explorer.
+- Keep student and program tabs accessible.
+- Allow horizontal tab scrolling.
+- Stack the editor and result panels.
+- Convert dashboard grids into fewer columns.
+
+Maintain keyboard accessibility, readable contrast, and visible focus states.
+
+---
+
+# 26. Animations
+
+Use Framer Motion sparingly.
+
+Implement:
+- Subtle page transitions.
+- Tab transitions.
+- Button hover effects.
+- Panel expansion.
+- Simulation timeline animations.
+- Small green status glows.
+- Loading indicators.
+
+Do not animate the editor itself or interfere with typing.
+
+Simulation animations must be deterministic and controllable with Start, Pause, Resume, and Reset.
+
+Respect reduced-motion preferences.
+
+---
+
+# 27. Suggested Folder Structure
+
+```text
+src/
+├── app/
+│   ├── router.tsx
+│   └── providers.tsx
+├── components/
+│   ├── layout/
+│   ├── tabs/
+│   ├── editor/
+│   ├── problem/
+│   ├── console/
+│   ├── simulation/
+│   ├── dashboard/
+│   ├── behavior/
+│   ├── security/
+│   └── ui/
+├── features/
+│   ├── workspace/
+│   ├── problems/
+│   ├── submissions/
+│   ├── simulation/
+│   ├── monitoring/
+│   └── reports/
+├── hooks/
+├── lib/
+│   ├── api-client.ts
+│   ├── query-client.ts
+│   └── utils.ts
+├── types/
+├── pages/
+└── styles/
+```
+
+Adapt the structure if appropriate while keeping the code modular.
+
+---
+
+# 28. Acceptance Criteria
+
+The finished application must satisfy all of the following:
+
+1. Opens directly into the compiler workspace without sign-in.
+2. Uses the premium dark/neon-green design.
+3. Displays student tabs and program tabs on separate rows.
+4. Both plus buttons work.
+5. Each student has independent programs.
+6. Each program preserves its own code, input, language, and results.
+7. Monaco Editor works.
+8. Run and Submit integrate with the real backend.
+9. Backend connectivity is reported accurately.
+10. Simulation mode has seven working scenarios.
+11. Simulation controls work.
+12. Simulated data is clearly distinguished from live data.
+13. An admin dashboard exists below the compiler and at `/admin`.
+14. Resource and execution charts use real or explicitly simulated data.
+15. Process and security events are displayed accurately.
+16. All four novelty features have dedicated panels.
+17. Detailed submission reports work when data is available.
+18. Hidden test cases remain protected.
+19. The workspace persists across refreshes.
+20. Loading, empty, error, and unavailable states are implemented.
+21. No fabricated security findings or execution results are presented as real.
+22. The application runs without frontend TypeScript errors.
+23. Setup instructions and environment configuration are documented.
+
+---
+
+# 29. Implementation Order
+
+Implement in this order:
+
+**Phase 1 — Core Workspace**
+- Design system.
+- Application navigation.
+- Student tabs.
+- Program tabs.
+- Monaco editor.
+- Local workspace persistence.
+
+**Phase 2 — Compiler Integration**
+- Problem explorer.
+- Run and Submit.
+- Execution console.
+- Backend connection status.
+- Real API integration.
+
+**Phase 3 — Simulation**
+- Scenario selector.
+- Execution timeline.
+- Resource visualization.
+- Start/Pause/Resume/Reset.
+- Clearly labeled simulation data.
+
+**Phase 4 — Admin Dashboard**
+- Overview metrics.
+- Execution health charts.
+- Submission table.
+- Resource monitor.
+- Process monitor.
+
+**Phase 5 — Novelty Features**
+- Behavior fingerprint.
+- Sequence-aware analysis.
+- Hardcoding review.
+- Adaptive trust.
+
+**Phase 6 — Reports and Polish**
+- Security reports.
+- Submission detail page.
+- Error states.
+- Responsive design.
+- Accessibility.
+- Documentation.
+- Final testing.
+
+After each phase, verify that existing features continue to work.
+
+# Final Instruction
+
+Build CodeGuard as one cohesive product with three connected experiences:
+
+**COMPILER → SIMULATION → ADMIN & SECURITY DASHBOARD**
+
+The compiler is where code is written and submitted. Simulation demonstrates how execution controls and security analysis work. The admin dashboard shows the resulting resource metrics, process events, behavior fingerprints, security alerts, and trust history.
+
+Use actual FastAPI data for real executions and clearly labeled local scenarios for simulation.
+
+The final result must be visually impressive, technically credible, easy to demonstrate to faculty, and ready to connect to the separately developed Python backend.

@@ -1,0 +1,36 @@
+# Environment and secrets
+.env
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Compiled artifacts
+*.exe
+*.obj
+*.o
+*.out
+*.pdb
+
+# Local sandbox / execution workspaces
+sandbox/
+!sandbox/.gitkeep
+
+# Logs (may contain local paths or sensitive details)
+logs/
+*.log
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

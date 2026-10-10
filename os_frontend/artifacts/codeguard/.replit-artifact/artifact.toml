@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "CodeGuard"
+description = "A behavior-aware online judge frontend for writing C and C++ programs, demonstrating controlled execution simulations, and reviewing runtime security signals from a separately hosted FastAPI backend."
+version = "1.0.0"
+id = "artifacts/codeguard"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24815
+
+[services.development]
+run = "pnpm --filter @workspace/codeguard run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/codeguard", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/codeguard/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24815"
+BASE_PATH = "/"

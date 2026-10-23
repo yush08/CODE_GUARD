@@ -1,189 +1,153 @@
 # CodeGuard frontend/backend integration status
 
-Date: 2026-10-10
+Date: 2026-10-22 (updated)
 
 ## Overall status
 
-The frontend in `os_frontend/artifacts/codeguard` is connected to the existing FastAPI backend contract under `/api/v1` without redesigning the UI. The remaining Reports page and submission-detail integration work has been completed in the existing implementation.
+The React frontend in `os_frontend/artifacts/codeguard` is connected to the existing FastAPI
+backend (`/api/v1`) without redesigning the UI. The dark/neon design, grid, typography, Monaco
+editor, sidebar/tabs/cards, animations and routes are unchanged; all data on screen comes from
+real API responses. No mock live data is mixed with real telemetry, and no endpoint or field is
+invented.
 
-The current backend process on `127.0.0.1:8000` is reachable, but it is running in database-unconfigured mode:
+This session verified the app against a **live, database-configured backend**:
 
-- `GET /api/v1/health` returned `200` with `database.configured=false`, `config_state=UNCONFIGURED_MISSING_URL`, and reason `DATABASE_URL is not set.`
-- DB-backed endpoints correctly return `503 DATABASE_NOT_CONFIGURED` until the backend `.env` contains the real PostgreSQL password and migrations are applied.
+- `GET /api/v1/health` → `database.configured=true`, `config_state=CONFIGURED`, `connectivity=REACHABLE`
+- Custom run (`POST /submissions/run`) → real compiled/ executed result rendered (exit code, wall/CPU
+  time, peak memory, `spawn_ms`, compiler banner, stdout, per-limit ENFORCED/MEASURED_ONLY states)
+- Judged submission (`POST /submissions` + `GET /submissions/{id}` polling) → terminal
+  `WRONG_ANSWER`, `0/6 passed`, per-test rows with hidden tests masked
+- Problem manager CRUD round trip (create → appears in list → preview → delete) against real rows
+- The database-unconfigured path (503 `DATABASE_NOT_CONFIGURED`) and the offline path
+  (backend stopped) were exercised earlier in this integration and remain handled honestly
 
-No database password was requested or stored in the frontend.
+No database password was requested, stored, or exposed by the frontend.
 
 ## Features connected
 
-- Backend status probe using `GET /api/v1/health`, `GET /api/v1/system/status`, and best-effort `/openapi.json` inspection.
-- Problem catalog loading with honest database-unconfigured error handling.
-- Custom execution flow using `POST /api/v1/submissions/run` when the database is configured.
-- Judged submission flow using `POST /api/v1/submissions` plus polling `GET /api/v1/submissions/{id}`.
-- Submission detail route `/submissions/:id` for:
-  - local simulation records; and
-  - numeric backend submission IDs.
-- Submission detail data loading for:
-  - submission detail;
-  - combined analysis report; and
-  - chronological behavior events.
-- Reports page backend feed selector with on-demand loading for:
-  - all faculty submissions;
-  - security alerts; and
-  - faculty dashboard data.
-- Admin/monitoring dashboard reads real dashboard, alert, and trust-history responses where available.
-- Existing local simulation history remains separate from backend records.
-- Environment example added/verified for `VITE_API_BASE_URL=http://localhost:8000/api/v1`.
+| Route | Behaviour |
+| --- | --- |
+| `/compiler` | Monaco workspace. Problem catalog from `GET /problems`; Run → `POST /submissions/run`; Submit → `POST /submissions` + polling; signals tab renders the stored report; Run/Submit disabled while the backend is unreachable |
+| `/submissions` | All stored submissions (`GET /faculty/submissions`) with search, status filter, pagination, multi-select |
+| `/compare` | Pairwise comparison via `GET /analysis/fingerprints/compare` for selected submissions |
+| `/alerts` | Security alerts (`GET /faculty/alerts`) |
+| `/analytics` | Behavior analytics from submission reports |
+| `/trust` | Trust/risk history (`GET /faculty/trust-history`) |
+| `/problems` | Problem manager: list/create/update/delete, preview dialog, test-case manager (list/add/delete) |
+| `/admin` | Faculty dashboard metrics, alerts, trust history, capability table, warnings, DB state |
+| `/simulation` | Unchanged deterministic simulator, always labelled `SIMULATION / DEMO DATA` |
+| `/health` | System health: compilers, worker, capabilities, warnings, DB state, retry |
+| `/reports` | Local simulation table + on-demand backend feeds (submissions / alerts / dashboard) |
+| `/submissions/:id` | Local simulation record, or the stored backend submission with report + events + test results |
+
+Top bar always shows backend reachability (`CONNECTED` / `DISCONNECTED`) and database state
+(`DB READY` / `DB UNAVAILABLE`) separately, plus a manual retry button.
 
 ## API endpoints used by the frontend
 
-Verified in the live OpenAPI path list:
+Single typed client: `src/lib/codeguard-api.ts` (typed DTOs in `src/lib/api-types.ts`).
 
-- `GET /api/v1/health`
-- `GET /api/v1/system/status`
-- `GET /api/v1/problems`
-- `POST /api/v1/submissions/run`
-- `POST /api/v1/submissions`
-- `GET /api/v1/submissions`
-- `GET /api/v1/submissions/{submission_id}`
-- `GET /api/v1/analysis/submissions/{submission_id}/report`
-- `GET /api/v1/analysis/submissions/{submission_id}/events`
-- `GET /api/v1/analysis/submissions/{submission_id}/fingerprint`
-- `GET /api/v1/analysis/submissions/{submission_id}/sequence`
-- `GET /api/v1/analysis/submissions/{submission_id}/hardcoding`
-- `GET /api/v1/faculty/dashboard`
-- `GET /api/v1/faculty/submissions`
-- `GET /api/v1/faculty/alerts`
-- `GET /api/v1/faculty/trust-history`
+- `GET /api/v1/health`, `GET /api/v1/system/status`, best-effort `GET /openapi.json`
+- `GET /problems`, `GET /problems/{id}`, `POST /problems`, `PUT /problems/{id}`, `DELETE /problems/{id}`
+- `GET /problems/{id}/test-cases`, `POST /problems/{id}/test-cases`, `DELETE /problems/{id}/test-cases/{caseId}`
+- `POST /submissions/run`, `POST /submissions`, `GET /submissions`, `GET /submissions/{id}`
+- `GET /faculty/submissions`, `GET /faculty/alerts`, `GET /faculty/dashboard`, `GET /faculty/trust-history`
+- `GET /analysis/submissions/{id}/report`, `/events`, `/fingerprint`, `/sequence`, `/hardcoding`
+- `GET /analysis/fingerprints/compare`
 
-## Unsupported or limited features
+## Unsupported / partial
 
-- Real authentication/login and RBAC are not implemented by the backend; faculty routes are local-dev surfaces only.
-- Network isolation is not implemented by the backend.
-- Job Objects are not presented as a complete sandbox.
-- CPU-time enforcement is displayed as measured-only when reported by the backend.
-- `SECURITY_VIOLATION` and `ACCESS_DENIED` are reserved/not emitted according to backend documentation.
-- DB-backed frontend flows cannot be fully end-to-end verified until `DATABASE_URL` is configured with the real PostgreSQL password and migrations are applied.
+- Per-limit enforcement states come from the backend; `cpu time` stays `MEASURED_ONLY` and is shown
+  as such. Job Objects are not a full sandbox — the UI repeats that disclaimer.
+- Sequence/hardcoding/trust panels render "No analysis returned" until the backend actually returns
+  a report for that submission; nothing is synthesized.
+- Local-demonstration workspaces (browser-local simulations) stay clearly labelled `SIMULATION /
+  DEMO DATA` and are never mixed with backend records.
+- Local-dev mode has no authentication (the problem manager states this); RBAC is backend work.
+- A frontend hosted on Replit cannot reach `http://localhost:8000` without a public URL or tunnel.
 
-## Files changed
+## Files changed (this session)
 
 - `os_frontend/artifacts/codeguard/src/App.tsx`
-  - Fixed incomplete JSX in the submission-detail page.
-  - Reports page uses the verified `GET /api/v1/faculty/submissions` feed through the centralized client.
-  - Submission detail renders real submission/report/event/test-result data and honest empty/error states.
-- `os_frontend/artifacts/codeguard/src/lib/codeguard-api.ts`
-  - Contains centralized typed API calls including `listAllSubmissions` for `GET /api/v1/faculty/submissions`.
-- `os_frontend/artifacts/codeguard/.env.example`
-  - Contains `VITE_API_BASE_URL=http://localhost:8000/api/v1` and no secrets.
-- `os_frontend/INTEGRATION_STATUS.md`
-  - This document.
+  - Applied the CSS hooks the design already defined but JSX never used (`emptyState`,
+    `contractHint`, `problemFooter`, `sectionToggle`, `tabRow(s)`, `searchBox`), so empty states,
+    footers, toggles and the workspace tab strip render at their intended sizes.
+  - Problem manager table: `problem-table-head` / `problem-row` / `problem-actions` / `report-table`
+    classes so the six-column table lays out correctly (the generic report row defines five columns).
+  - `test-case-manager` class on the test-case dialog body.
+  - Added missing container styles (`form`, `preview`, `sampleTests`, `testCaseManager`).
+- `os_frontend/artifacts/codeguard/src/index.css`
+  - New section styling the problem-manager hooks with existing tokens only: `.empty-icon`,
+    `.report-table`, `.problem-*`, `.difficulty-badge`, `.modal-*`, `.form-*`, `.preview-*`,
+    `.sample-test*`, `.test-case-manager`, `.console-prompt`, plus a mobile rule.
 
-## Environment configuration
+Previously committed integration work (this repository's HEAD): the typed API client, DTO file,
+Run/Submit wiring, submission detail route, reports feed, admin dashboard, `.env.example`, and
+`.env` entries in `os_frontend/.gitignore`.
 
-Frontend `.env` location:
+## Verification
 
-```powershell
-D:\PROJECTS\OS\os_frontend\artifacts\codeguard\.env
+Commands run in this session (all from `D:\PROJECTS\OS\os_frontend\artifacts\codeguard`):
+
+```
+pnpm exec tsc -p tsconfig.json --noEmit     # exit 0
+PORT=5173 BASE_PATH=/ pnpm exec vite build  # exit 0, dist/public written
 ```
 
-Example value:
+Browser verification (headless Edge driving `http://localhost:5173` against the backend on
+`http://127.0.0.1:8000`), with screenshots:
 
-```env
+- Compiler page: catalog loads (4 problems), no catalog error, footer/empty-state typography fixed
+- Run: `ACCEPTED`, submission #42 custom run, `EXIT 0`, `WALL 46 ms`, `CPU 30 ms`, `PEAK MEM 5.2 MB`,
+  `SPAWN 141 ms`, `COMPILE ok · gcc 6.3.0 · 2329 ms`, real stdout, limits row with `cpu time=MEASURED_ONLY`
+- Submit: polled to terminal `WRONG_ANSWER`, `0/6 passed`, public/hidden per-test rows
+- Submission detail `/submissions/43`: status, metrics, 6 test rows, 12 events, real fingerprint
+- Reports feed: 10 real backend submission rows, no feed errors
+- Problem manager: table layout correct, create → save → list, preview dialog, test-case dialog
+  (6 cases) and add-test-case form; created problem deleted afterwards (DB left unchanged)
+- No page/JS errors in any run; Monaco mounts (its AMD loader is fetched from jsdelivr —
+  pre-existing behaviour, unchanged)
+
+Earlier in this integration (same codebase): database-unconfigured mode (503 surfaces on catalog,
+Run/Submit, dashboard, feeds, submission detail), backend offline mode (chip `DISCONNECTED`, app
+still renders, Run/Submit disabled, retry works, no mock fallback), per-workspace and per-program
+state isolation, and localStorage persistence across reloads.
+
+Backend tests were last run in the backend phase of this project: `pytest -q` → 99 passed /
+4 skipped, and `pytest -m windows` → 22 passed. They were not re-run in this session.
+
+## API base configuration
+
+`os_frontend/artifacts/codeguard/.env.example`:
+
+```
 VITE_API_BASE_URL=http://localhost:8000/api/v1
+PORT=5173
+BASE_PATH=/
 ```
 
-The frontend `.env` is ignored by `os_frontend/.gitignore`. Do not put PostgreSQL credentials in frontend environment files.
+Copy to `.env` (git-ignored) for local overrides. The client normalises the value, so both
+`http://localhost:8000` and `http://localhost:8000/api/v1` resolve to exactly one `/api/v1` prefix.
+Never put the PostgreSQL password in frontend env vars — the backend reads `DATABASE_URL`.
 
-## Start commands
+## Running both apps
 
-Run backend from `D:\PROJECTS\OS`:
+Backend (Python 3.12 venv, port 8000):
 
-```powershell
+```
+cd D:\PROJECTS\OS
+.\.venv\Scripts\python.exe -m alembic upgrade head          # first run only
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-Run frontend from `D:\PROJECTS\OS\os_frontend`:
+Frontend (pnpm workspace, port 5173):
 
-```powershell
-$env:PORT='5173'
-$env:BASE_PATH='/'
-pnpm --filter @workspace/codeguard run dev
+```
+cd D:\PROJECTS\OS\os_frontend
+pnpm install                                                  # Windows: pnpm install --ignore-scripts (preinstall uses sh)
+cd artifacts\codeguard
+$env:PORT='5173'; $env:BASE_PATH='/'; pnpm exec vite --host 127.0.0.1
 ```
 
-Build frontend from `D:\PROJECTS\OS\os_frontend`:
-
-```powershell
-$env:PORT='5173'
-$env:BASE_PATH='/'
-pnpm --filter @workspace/codeguard run build
-```
-
-## Commands run and results
-
-Dependency install/check:
-
-```powershell
-pnpm install
-```
-
-Result: already up to date, completed successfully with pnpm `12.9.1`.
-
-Type checks:
-
-```powershell
-pnpm --filter @workspace/codeguard run typecheck
-pnpm run typecheck
-```
-
-Result: both passed.
-
-Production build:
-
-```powershell
-$env:PORT='5173'; $env:BASE_PATH='/'; pnpm --filter @workspace/codeguard run build
-```
-
-Result: passed. Vite built `dist/public` successfully.
-
-Backend/API checks performed:
-
-- Port check found an existing listener on `127.0.0.1:8000`; no second backend was started.
-- `GET http://127.0.0.1:8000/api/v1/health` returned `200` and `DATABASE_URL is not set.`
-- `GET http://127.0.0.1:8000/api/v1/system/status` returned compiler, Job Object, worker, capability, and database status data.
-- `GET http://127.0.0.1:8000/openapi.json` listed 21 paths including `GET /api/v1/faculty/submissions`.
-- `GET /api/v1/faculty/submissions?page=1&page_size=10` returned `503 DATABASE_NOT_CONFIGURED`, confirming the route exists and is DB-backed.
-- `POST /api/v1/submissions/run` with a small C program returned `503 DATABASE_NOT_CONFIGURED`, as expected in the current backend mode.
-
-## Tests skipped or not fully run
-
-- Browser UI walkthrough was not completed because the database is not configured; DB-backed feeds and submission execution correctly return `DATABASE_NOT_CONFIGURED`.
-- C/C++ live execution, submission polling, submission-detail loading for a real stored submission, and dashboard data population remain pending until the backend database is configured.
-- Backend pytest was not rerun in this session; historical results in backend docs were not re-claimed as newly executed.
-
-## Database configuration still required
-
-After adding the real PostgreSQL password to backend `.env`, run from `D:\PROJECTS\OS`:
-
-```powershell
-.\.venv\Scripts\python.exe -m alembic upgrade head
-.\.venv\Scripts\python.exe scripts\seed_demo.py --run-submissions
-```
-
-Then restart the backend and reload the frontend.
-
-## Final end-to-end verification steps
-
-After database configuration:
-
-1. Start backend and frontend with the commands above.
-2. Confirm frontend status shows backend connected and database ready.
-3. Load the problem catalog.
-4. Run a small valid C program.
-5. Run a small valid C++ program.
-6. Try a compilation failure.
-7. Try a runtime failure.
-8. Try a safe wall-clock timeout sample.
-9. Submit against a real problem and confirm polling reaches a terminal status.
-10. Open `/submissions/{id}` and verify detail, report, events, limits, and test rows.
-11. Open `/reports`, load each backend feed, and verify real rows/empty states.
-12. Open `/admin` and verify dashboard, alerts, and trust-history states.
-13. Stop the backend and verify the frontend shows backend-offline state without crashing.
+CORS: the backend allowlist already includes `http://localhost:5173`; no frontend URL is hardcoded
+in the backend.

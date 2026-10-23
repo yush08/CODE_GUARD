@@ -398,3 +398,80 @@
   .recent-run > span:nth-child(3), .monitor-run-link > span:nth-child(3) { display: none; }
   .run-id { overflow-wrap: anywhere; }
 }
+
+/* ---------------------------------------------------------------------------
+   Faculty console: problem statement manager, modals, forms and preview
+   blocks. These hooks ship with the problem-manager feature and reuse the
+   workspace tokens — no new palette, no new component library.
+ --------------------------------------------------------------------------- */
+.empty-icon { display: inline-flex; align-items: center; justify-content: center; color: #7fdaa7; }
+.emptyState .empty-icon, .contractHint .empty-icon, .monitorEmpty .empty-icon, .monitor-empty .empty-icon, .report-empty .empty-icon { margin: 0 auto 9px; }
+
+.report-table { border: 1px solid #2b352e; border-radius: 5px; background: #111613; overflow: hidden; }
+
+/* The problem table has six columns; the generic report row defines five. */
+.problem-table-head, .problem-row { grid-template-columns: 54px minmax(150px, 1.4fr) minmax(120px, 1fr) 92px minmax(110px, .8fr) minmax(180px, auto); align-items: center; }
+.problem-row .mono { font-size: 9px; color: #8b968d; }
+.problem-actions { align-items: center; justify-content: flex-end; gap: 4px; }
+.report-class.easy { color: #8cd5a2; }
+.report-class.medium { color: #cfb875; }
+.report-class.hard { color: #d79385; }
+
+.difficulty-badge { font-family: var(--app-font-mono); font-size: 8px; letter-spacing: .5px; padding: 3px 6px; border: 1px solid #34413a; border-radius: 3px; color: #a9b6ab; background: #161e19; }
+.difficulty-badge.easy { color: #8cd5a2; border-color: #36513f; }
+.difficulty-badge.medium { color: #cfb875; border-color: #4a4230; }
+.difficulty-badge.hard { color: #d79385; border-color: #4a332e; }
+
+/* Modal shell (create / view / test-case dialogs). */
+.modal-overlay { position: fixed; inset: 0; z-index: 40; display: flex; align-items: flex-start; justify-content: center; padding: 48px 18px; overflow-y: auto; background: rgba(6, 9, 7, .72); }
+.modal-content { display: grid; width: 100%; max-width: 560px; align-self: flex-start; border: 1px solid #2f3b33; border-radius: 6px; background: #111613; box-shadow: 0 18px 48px rgba(0, 0, 0, .45); }
+.modal-content.large { max-width: 880px; }
+.modal-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 15px; border-bottom: 1px solid #26302a; }
+.modal-header h2, .modal-header h3 { margin: 0; color: #dfe8e0; font-size: 13px; font-weight: 600; }
+.modal-close { display: inline-flex; align-items: center; justify-content: center; width: 25px; height: 25px; border: 1px solid #2c372f; border-radius: 4px; background: transparent; color: #8b968d; cursor: pointer; }
+.modal-close:hover { color: #cbd5cc; border-color: #40503f; }
+
+/* Problem and test-case forms. */
+.form-group { display: grid; gap: 6px; }
+.form-group label { color: #89958c; font-family: var(--app-font-mono); font-size: 8px; letter-spacing: .65px; text-transform: uppercase; }
+.form-group input, .form-group textarea, .form-group select { width: 100%; background: #111714; color: #d1d9d2; border: 1px solid #2a352e; border-radius: 3px; padding: 7px 9px; outline: none; font-family: var(--app-font-mono); font-size: 10px; }
+.form-group textarea { resize: vertical; line-height: 1.55; }
+.form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: #4a6a52; }
+.form-group input::placeholder, .form-group textarea::placeholder { color: #68746b; }
+.form-group input[type="checkbox"], .form-group input[type="radio"] { width: auto; accent-color: #7fdaa7; }
+.form-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; }
+.form-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding-top: 3px; }
+
+/* Problem preview dialog. */
+.preview { display: grid; gap: 13px; padding: 15px; }
+.preview-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.preview-header h4 { margin: 0; color: #dfe8e0; font-size: 14px; font-weight: 600; letter-spacing: -.3px; }
+.preview-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; color: #7f8a82; font-size: 9px; }
+.preview-section { display: grid; gap: 6px; }
+.preview-section h5 { margin: 0; color: #97a49a; font-family: var(--app-font-mono); font-size: 8px; font-weight: 600; letter-spacing: .8px; text-transform: uppercase; }
+.preview-section p { margin: 0; color: #9dab9f; font-size: 10px; line-height: 1.65; }
+.preview-section pre { margin: 0; padding: 9px 10px; border: 1px solid #26302a; border-radius: 4px; background: #0f1411; color: #c3cec4; font-family: var(--app-font-mono); font-size: 9px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.preview-section > div[style*="flex"] span { color: #8b968d; font-family: var(--app-font-mono); font-size: 9px; }
+
+.sample-tests { display: grid; gap: 9px; }
+.sample-test { display: grid; gap: 8px; border: 1px solid #29332d; border-radius: 4px; background: #111613; padding: 10px; }
+.sample-test-input, .sample-test-output { display: grid; gap: 4px; }
+.sample-test-input strong, .sample-test-output strong { color: #8b968d; font-family: var(--app-font-mono); font-size: 8px; font-weight: 600; letter-spacing: .6px; text-transform: uppercase; }
+.sample-test-input pre, .sample-test-output pre { margin: 0; padding: 8px 9px; border: 1px solid #26302a; border-radius: 4px; background: #0f1411; color: #c3cec4; font-family: var(--app-font-mono); font-size: 9px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* Test case manager (inside the test-cases dialog). */
+.test-case-manager h4 { margin: 0; color: #dfe8e0; font-size: 12px; font-weight: 600; }
+.test-case-manager h5 { margin: 0 0 10px; color: #97a49a; font-family: var(--app-font-mono); font-size: 9px; letter-spacing: .8px; text-transform: uppercase; }
+.test-case-manager strong { color: #8b968d; font-family: var(--app-font-mono); font-size: 8px; font-weight: 600; letter-spacing: .6px; text-transform: uppercase; }
+.test-case-manager pre { margin: 4px 0 0; padding: 7px 8px; border: 1px solid #26302a; border-radius: 4px; background: #0f1411; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+.console-prompt { color: #6f7b73; }
+
+@media (max-width: 760px) {
+  .problem-table-head { display: none; }
+  .problem-row { grid-template-columns: minmax(0, 1fr) auto; row-gap: 6px; }
+  .problem-row > *:nth-child(3), .problem-row > *:nth-child(5) { grid-column: 1 / -1; }
+  .problem-actions { justify-content: flex-start; flex-wrap: wrap; }
+  .form-row { grid-template-columns: 1fr; }
+  .modal-overlay { padding: 24px 12px; }
+}

@@ -682,15 +682,15 @@ function CompilerPage(props: {
   return <div style={styles.content}>
     <PageHeading eyebrow="WORKSPACE / C & C++" title="Compiler workspace" detail="Write C or C++, run it with your own input, or submit it for judging." trailing={<span style={styles.localBadge}><span className="live-dot" /> LOCAL WORKSPACE</span>} />
     <div style={styles.workspaceShell}>
-      <div style={styles.tabRows} className="mobile-scroll">
-        <div style={styles.tabRow}>
+      <div style={styles.tabRows} className="tabRows mobile-scroll">
+        <div className="tabRow" style={styles.tabRow}>
           <div style={styles.tabRowLabel}><Users size={12} /> WORKSPACES</div>
           {store.students.map((item, index) => <button key={item.id} onClick={() => props.updateStudent(item.id)} className={`workspace-tab ${item.id === student?.id ? 'selected' : ''}`} data-testid={`tab-workspace-${item.id}`}>
             <span className="workspace-index">{String(index + 1).padStart(2, '0')}</span>{item.name}<span className="demo-label">DEMO LABEL</span>
           </button>)}
           <button className="small-add" onClick={props.addStudent} title="Add local demonstration workspace" data-testid="button-add-workspace"><Plus size={14} /></button>
         </div>
-        {student && <div style={styles.tabRow}>
+        {student && <div className="tabRow" style={styles.tabRow}>
           <div style={styles.tabRowLabel}><FileCode2 size={12} /> PROGRAMS</div>
           {student.programs.map((file) => <button key={file.id} onClick={() => props.updateActiveProgram(file.id)} className={`program-tab ${file.id === program?.id ? 'selected' : ''}`} data-testid={`tab-program-${file.id}`}>
             <span className="file-dot" />{file.name}{file.language === 'cpp' && <span className="file-ext">C++</span>}
@@ -779,7 +779,7 @@ function CompilerPage(props: {
         </aside>
       </div>
     </div>
-    <button onClick={() => setExpanded((value) => !value)} style={styles.sectionToggle} aria-expanded={expanded} data-testid="button-toggle-monitoring-overview">
+    <button onClick={() => setExpanded((value) => !value)} className="sectionToggle" style={styles.sectionToggle} aria-expanded={expanded} data-testid="button-toggle-monitoring-overview">
       <span><LayoutDashboard size={14} /> MONITORING OVERVIEW</span><span>{expanded ? 'COLLAPSE' : 'EXPAND'} <ChevronDown size={13} style={{ transform: expanded ? 'rotate(180deg)' : undefined }} /></span>
     </button>
     {expanded && <DashboardOverview api={api} activeSimulation={activeSimulation} report={execution?.report} />}
@@ -884,9 +884,9 @@ function ProblemExplorer({ api, program, updateProgram }: { api: BackendStatus; 
 
   return <div style={styles.problemPanel} className="fade-in">
     <div style={styles.explorerHeading}><div><div style={styles.eyebrow}>CATALOG</div><h2 style={styles.sectionTitle}>Problem explorer</h2></div><span style={styles.smallIcon}><Search size={14} /></span></div>
-    {catalog.status === 'loading' && <div style={styles.contractHint}><div style={styles.emptyIcon}><FileSearch size={17} /></div><strong>Loading problems</strong><p>GET /api/v1/problems</p></div>}
+    {catalog.status === 'loading' && <div className="contractHint" style={styles.contractHint}><div style={styles.emptyIcon}><FileSearch size={17} /></div><strong>Loading problems</strong><p>GET /api/v1/problems</p></div>}
     {catalog.status === 'error' && <div className="backend-feed-error" data-testid="text-problem-error">{catalog.error}</div>}
-    {catalog.status === 'ready' && !items.length && <div style={styles.emptyState}>
+    {catalog.status === 'ready' && !items.length && <div className="emptyState" style={styles.emptyState}>
       <div style={styles.emptyIcon}><FileSearch size={17} /></div>
       <strong>No problems stored</strong>
       <p>The backend returned an empty catalog. This is a real zero — no problems were invented.</p>
@@ -909,7 +909,7 @@ function ProblemExplorer({ api, program, updateProgram }: { api: BackendStatus; 
       <div className="mono" style={styles.selectedProblem} data-testid="text-selected-problem">
         {selected ? `SELECTED · #${selected.id} ${selected.title}` : 'NO PROBLEM SELECTED — PICK ONE ABOVE TO SUBMIT'}
       </div>
-    </div> : catalog.status !== 'loading' && <div style={styles.emptyState}>
+    </div> : catalog.status !== 'loading' && <div className="emptyState" style={styles.emptyState}>
       <div style={styles.emptyIcon}><FileSearch size={17} /></div>
       <strong>Backend problem ID</strong>
       <p>Required by POST /api/v1/submissions when the catalog is unavailable.</p>
@@ -917,7 +917,7 @@ function ProblemExplorer({ api, program, updateProgram }: { api: BackendStatus; 
       <input value={program?.problemId ?? ''} onChange={(event) => updateProgram({ problemId: event.target.value })} placeholder="No problem selected" style={styles.textInput} data-testid="input-problem-id" />
       <div className="mono" style={{ fontSize: 9, color: '#707b73', marginTop: 8 }}>{api.state === 'connected' ? 'Catalog unavailable — enter an ID manually.' : 'Waiting for a backend connection.'}</div>
     </div>}
-    <div style={styles.problemFooter}><div style={styles.footerIcon}><CircleHelp size={14} /></div><div><strong>How submissions work</strong><p>Run executes your code once with your stdin. Submit judges it against this problem's stored tests.</p></div></div>
+    <div className="problemFooter" style={styles.problemFooter}><div style={styles.footerIcon}><CircleHelp size={14} /></div><div><strong>How submissions work</strong><p>Run executes your code once with your stdin. Submit judges it against this problem's stored tests.</p></div></div>
   </div>;
 }
 
@@ -1218,7 +1218,7 @@ function SubmissionsPage({ api }: { api: BackendStatus }) {
     <PageHeading eyebrow="FACULTY CONSOLE / SUBMISSIONS" title="Submissions" detail="Search, filter, inspect, and select backend submissions for comparison. Values are loaded from the faculty submissions endpoint." trailing={<span className="backendBadge">LIVE BACKEND DATA</span>} />
     <ApiNotice api={api} compact />
     <div className="report-toolbar" style={styles.reportToolbar}>
-      <div className="search-box" style={styles.searchBox}><Search size={14} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search id, status, workspace, problem" /></div>
+      <div className="searchBox search-box" style={styles.searchBox}><Search size={14} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search id, status, workspace, problem" /></div>
       <select className="filter-select" value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }} style={styles.filterSelect} aria-label="Filter submission status">
         <option value="">All statuses</option>{Object.keys(TERMINAL_TONE).map((item) => <option key={item} value={item}>{item}</option>)}
       </select>
@@ -1681,7 +1681,7 @@ function TestCaseManager({
   };
 
   return (
-    <div style={styles.testCaseManager}>
+    <div className="test-case-manager" style={styles.testCaseManager}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <h4>Test Cases for Problem #{problemId}</h4>
         <button className="action-button primary" onClick={() => setShowCreate(true)}><Plus size={12} /> Add Test Case</button>
@@ -1852,7 +1852,7 @@ function ProblemsPage({ api }: { api: BackendStatus }) {
       <PageHeading eyebrow="FACULTY CONSOLE / PROBLEMS" title="Manage Problems" detail="Create and manage programming problems and their test cases. Local-dev mode is not authentication." trailing={<span className="backendBadge">LIVE BACKEND DATA</span>} />
       <ApiNotice api={api} compact />
       <div className="report-toolbar" style={styles.reportToolbar}>
-        <div className="search-box" style={styles.searchBox}>
+        <div className="searchBox search-box" style={styles.searchBox}>
           <Search size={14} />
           <input
             value={search}
@@ -1874,8 +1874,8 @@ function ProblemsPage({ api }: { api: BackendStatus }) {
       {problems.status === 'ready' && (
         <>
           <div className="backend-feed-caption">{filteredProblems.length} OF {problems.data?.pagination?.total ?? 0} PROBLEMS</div>
-          <div style={styles.reportTable}>
-            <div className="report-table-head">
+          <div className="report-table" style={styles.reportTable}>
+            <div className="report-table-head problem-table-head">
               <span>ID</span>
               <span>TITLE</span>
               <span>SLUG</span>
@@ -1891,13 +1891,13 @@ function ProblemsPage({ api }: { api: BackendStatus }) {
               </div>
             ) : (
               filteredProblems.map((problem) => (
-                <div key={problem.id} className="report-row">
+                <div key={problem.id} className="report-row problem-row">
                   <span className="mono">#{problem.id}</span>
                   <span><strong>{problem.title}</strong></span>
                   <span className="mono">{problem.slug}</span>
                   <span><span className={`report-class ${problem.difficulty.toLowerCase()}`}>{problem.difficulty}</span></span>
                   <span className="mono">{problem.test_case_counts.public} public / {problem.test_case_counts.hidden} hidden</span>
-                  <div style={{ display: 'flex', gap: 4 }}>
+                  <div className="problem-actions" style={{ display: 'flex', gap: 4 }}>
                     <button className="action-button secondary" style={{ padding: '4px 8px' }} onClick={() => { handleViewProblem(problem.id); setViewingProblem(null); }}>
                       <Eye size={12} /> View
                     </button>
@@ -1986,7 +1986,7 @@ function TrustRiskPage({ api, workspaceLabel }: { api: BackendStatus; workspaceL
   const [trust, setTrust] = useState<FeedState<TrustHistoryResponse>>({ status: 'idle' });
   const load = useCallback((signal?: AbortSignal) => { setTrust({ status: 'loading' }); return getTrustHistory(label, 50, signal).then((data) => setTrust({ status: 'ready', data })).catch((error: unknown) => { if (!isAbortError(error)) setTrust({ status: 'error', error: describeApiError(error) }); }); }, [label]);
   useEffect(() => { if (api.state !== 'connected') return; const c = new AbortController(); load(c.signal); return () => c.abort(); }, [api.state, load]);
-  return <div style={styles.content}><PageHeading eyebrow="FACULTY CONSOLE / TRUST" title="Trust & Risk History" detail="Workspace-scoped adaptive trust history. This is not user authentication and never changes execution limits." trailing={<span className="backendBadge">LIVE BACKEND DATA</span>} /><div className="report-toolbar" style={styles.reportToolbar}><div className="search-box" style={styles.searchBox}><Gauge size={14} /><input value={label} onChange={(event) => setLabel(event.target.value)} placeholder="Workspace label" /></div><button className="action-button secondary" onClick={() => load()}><RefreshCw size={12} /> Load history</button></div>{trust.status === 'loading' && <div style={styles.loadingState}><div className="skeleton-line" /><div className="skeleton-block" /></div>}{trust.status === 'error' && <div className="backend-feed-error">{trust.error}</div>}{trust.status === 'ready' && <section style={styles.detailCard}><div style={styles.resultMetrics}><div style={styles.resultMetric}><span style={styles.resultMetricLabel}>SCORE</span><span style={styles.resultMetricValue}>{trust.data?.current_score ?? 'Unavailable'}</span></div><div style={styles.resultMetric}><span style={styles.resultMetricLabel}>LEVEL</span><span style={styles.resultMetricValue}>{trust.data?.monitoring_level ?? 'Unavailable'}</span></div><div style={styles.resultMetric}><span style={styles.resultMetricLabel}>OPEN ALERTS</span><span style={styles.resultMetricValue}>{trust.data?.open_alerts ?? 'Unavailable'}</span></div></div>{(trust.data?.entries ?? []).map((entry) => <div className="sequence-row" key={entry.id}><span className="sequence-number">{entry.previous_score}→{entry.new_score}</span><code>{entry.reason}</code><span>{formatTime(entry.created_at)}</span></div>)}{!(trust.data?.entries ?? []).length && <div style={styles.inlineEmpty}>No trust-history rows returned for this workspace label.</div>}</section>}</div>;
+  return <div style={styles.content}><PageHeading eyebrow="FACULTY CONSOLE / TRUST" title="Trust & Risk History" detail="Workspace-scoped adaptive trust history. This is not user authentication and never changes execution limits." trailing={<span className="backendBadge">LIVE BACKEND DATA</span>} /><div className="report-toolbar" style={styles.reportToolbar}><div className="searchBox search-box" style={styles.searchBox}><Gauge size={14} /><input value={label} onChange={(event) => setLabel(event.target.value)} placeholder="Workspace label" /></div><button className="action-button secondary" onClick={() => load()}><RefreshCw size={12} /> Load history</button></div>{trust.status === 'loading' && <div style={styles.loadingState}><div className="skeleton-line" /><div className="skeleton-block" /></div>}{trust.status === 'error' && <div className="backend-feed-error">{trust.error}</div>}{trust.status === 'ready' && <section style={styles.detailCard}><div style={styles.resultMetrics}><div style={styles.resultMetric}><span style={styles.resultMetricLabel}>SCORE</span><span style={styles.resultMetricValue}>{trust.data?.current_score ?? 'Unavailable'}</span></div><div style={styles.resultMetric}><span style={styles.resultMetricLabel}>LEVEL</span><span style={styles.resultMetricValue}>{trust.data?.monitoring_level ?? 'Unavailable'}</span></div><div style={styles.resultMetric}><span style={styles.resultMetricLabel}>OPEN ALERTS</span><span style={styles.resultMetricValue}>{trust.data?.open_alerts ?? 'Unavailable'}</span></div></div>{(trust.data?.entries ?? []).map((entry) => <div className="sequence-row" key={entry.id}><span className="sequence-number">{entry.previous_score}→{entry.new_score}</span><code>{entry.reason}</code><span>{formatTime(entry.created_at)}</span></div>)}{!(trust.data?.entries ?? []).length && <div style={styles.inlineEmpty}>No trust-history rows returned for this workspace label.</div>}</section>}</div>;
 }
 
 const CAPABILITY_TONE_CLASS: Record<string, string> = {
@@ -2069,7 +2069,7 @@ function ReportsPage({ store, api }: { store: WorkspaceStore; api: BackendStatus
   return <div style={styles.content}>
     <PageHeading eyebrow="OBSERVABILITY / REPORTS" title="Security reports" detail="Filter local teaching simulations. Backend records load on demand from the API." trailing={<span className="simulationBadge"><Activity size={12} /> LOCAL HISTORY</span>} />
     <div className="report-toolbar" style={styles.reportToolbar}>
-      <div className="search-box" style={styles.searchBox}><Search size={14} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Filter by scenario or run ID" data-testid="input-report-search" /></div>
+      <div className="searchBox search-box" style={styles.searchBox}><Search size={14} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Filter by scenario or run ID" data-testid="input-report-search" /></div>
       <select className="filter-select" value={filter} onChange={(event) => setFilter(event.target.value)} style={styles.filterSelect} aria-label="Filter simulation scenario" data-testid="select-report-filter">
         <option value="all">All local scenarios</option>{Object.entries(scenarioDefinitions).map(([key, item]) => <option value={key} key={key}>{item.name}</option>)}
       </select>
@@ -2447,6 +2447,11 @@ const styles: Record<string, CSSProperties> = {
   capabilityName: { color: '#a8b3aa', fontSize: 9 },
   capabilityWarning: { color: '#b7a97a', fontSize: 9, marginTop: 6, lineHeight: 1.5 },
   testRow: { display: 'grid', gridTemplateColumns: '46px minmax(90px,1fr) 70px 96px 90px', gap: 10, alignItems: 'center', minHeight: 30, borderTop: '1px solid #252e28', fontSize: 9, color: '#8b968d' },
+  // Problem Statement Manager containers (ProblemForm / ProblemPreview / TestCaseManager).
+  form: { display: 'grid', gap: 13 },
+  preview: { display: 'grid', gap: 13 },
+  sampleTests: { display: 'grid', gap: 9 },
+  testCaseManager: { display: 'grid', gap: 8 },
   reportEmpty: { minHeight: 130, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: 18, gap: 5 },
   // Faculty dashboard / submissions / comparison — same design tokens.
   dashboardPanel: { border: '1px solid #28322b', background: '#111613', borderRadius: 5, padding: 13, minWidth: 0 },

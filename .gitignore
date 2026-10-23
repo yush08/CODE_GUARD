@@ -34,3 +34,8 @@ logs/
 .idea/
 .DS_Store
 Thumbs.db
+
+node_modules/
+.env
+.venv/
+
